@@ -105,6 +105,78 @@ cargo build --release
 
 <img src="https://capsule-render.vercel.app/api?type=rect&color=0:00d4ff,100:7c3aed&height=1" width="100%"/>
 
+## 🏠 People Search Sites
+
+Search directly from 5 major people lookup databases with `-p`:
+
+| Site | What It Finds | Flag |
+|------|---------------|------|
+| 📖 **Whitepages** | Full names, current/past addresses, phone records, age | `--whitepages` |
+| 👥 **TruePeopleSearch** | Owner info, relatives, associates, neighbors | `--truepeoplesearch` |
+| ⚡ **FastPeopleSearch** | Quick lookups with age, location, possible relatives | `--fastpeoplesearch` |
+| 🎯 **ThatsThem** | Comprehensive profile: email, address, social profiles | `--thatsthem` |
+| 📱 **USPhoneBook** | Phone carrier, line type, owner details | `--usphonebook` |
+
+```bash
+# Search ALL people sites
+telespotter 5551234567 -p
+
+# Search specific sites only
+telespotter 5551234567 -p --whitepages --truepeoplesearch
+
+# Combine with search engines
+telespotter 5551234567 -p -e google --random-ua
+```
+
+<img src="https://capsule-render.vercel.app/api?type=rect&color=0:00d4ff,100:7c3aed&height=1" width="100%"/>
+
+## 🔎 OSINT Tool Integration
+
+TeleSpotter automatically detects found usernames and emails, then offers to run external OSINT tools:
+
+### Sherlock — Username Search
+Searches 400+ social networks for matching usernames.
+```bash
+# Auto-run on found usernames
+telespotter 5551234567 --sherlock
+
+# Or get prompted after scan finds usernames
+telespotter 5551234567 -p
+# Output: "Found 3 username(s). Run Sherlock to find social media profiles? (y/n)"
+```
+**Install:** `pip install sherlock-project`
+
+### Blackbird — Email Search
+Searches for accounts associated with found email addresses.
+```bash
+# Auto-run on found emails
+telespotter 5551234567 --blackbird
+
+# Or get prompted after scan finds emails
+telespotter 5551234567 -p
+# Output: "Found 2 email(s). Run Blackbird to search for accounts? (y/n)"
+```
+**Install:** `pip install blackbird`
+
+### email2phonenumber — Reverse Lookup
+Attempts to find phone numbers associated with email addresses.
+```bash
+# Auto-run reverse lookup
+telespotter 5551234567 --email2phone
+```
+**Install:** `pip install email2phonenumber`
+
+### Skip All Prompts
+```bash
+# For scripting - no interactive prompts
+telespotter 5551234567 -p --no-osint-prompts -s
+
+# Auto-run all tools without prompts
+telespotter 5551234567 -p --sherlock --blackbird --email2phone
+```
+
+<img src="https://capsule-render.vercel.app/api?type=rect&color=0:00d4ff,100:7c3aed&height=1" width="100%"/>
+
 ## 🚀 Usage
 
 ### Interactive Mode
