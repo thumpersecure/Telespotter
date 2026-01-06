@@ -14,6 +14,13 @@ mod duckduckgo;
 mod parser;
 mod analysis;
 
+// People search site modules
+mod whitepages;
+mod truepeoplesearch;
+mod fastpeoplesearch;
+mod thatsthem;
+mod usphonebook;
+
 use crate::phone::PhoneFormatter;
 use crate::search::{SearchResult, SearchConfig};
 use crate::analysis::PatternAnalyzer;
@@ -25,7 +32,7 @@ const ASCII_LOGO: &str = r#"
    ██║   ██╔══╝  ██║     ██╔══╝  ╚════██║██╔═══╝ ██║   ██║   ██║      ██║   ██╔══╝  ██╔══██╗
    ██║   ███████╗███████╗███████╗███████║██║     ╚██████╔╝   ██║      ██║   ███████╗██║  ██║
    ╚═╝   ╚══════╝╚══════╝╚══════╝╚══════╝╚═╝      ╚═════╝    ╚═╝      ╚═╝   ╚══════╝╚═╝  ╚═╝
-                                                                              version 2.0
+                                                                              version 2.1
 "#;
 
 /// Output format options
@@ -124,6 +131,34 @@ struct Args {
     /// Skip OSINT tool prompts (don't ask to run Sherlock/Blackbird)
     #[arg(long)]
     no_osint_prompts: bool,
+
+    /// Use random user agent for each request (helps avoid detection)
+    #[arg(long)]
+    random_ua: bool,
+
+    /// Search people lookup sites (Whitepages, TruePeopleSearch, etc.)
+    #[arg(short = 'p', long)]
+    people_search: bool,
+
+    /// Enable only Whitepages search (use with --people-search)
+    #[arg(long)]
+    whitepages: bool,
+
+    /// Enable only TruePeopleSearch (use with --people-search)
+    #[arg(long)]
+    truepeoplesearch: bool,
+
+    /// Enable only FastPeopleSearch (use with --people-search)
+    #[arg(long)]
+    fastpeoplesearch: bool,
+
+    /// Enable only ThatsThem search (use with --people-search)
+    #[arg(long)]
+    thatsthem: bool,
+
+    /// Enable only USPhoneBook search (use with --people-search)
+    #[arg(long)]
+    usphonebook: bool,
 }
 
 /// Helper to determine if an engine should be used
@@ -483,7 +518,14 @@ async fn main() -> anyhow::Result<()> {
     // Create search config
     let config = SearchConfig {
         timeout_secs: args.timeout,
+        random_user_agent: args.random_ua,
     };
+
+    if args.random_ua && !args.quiet {
+        qprint!(args.quiet, args.no_color,
+            "Random user agent rotation enabled".green(),
+            "Random user agent rotation enabled");
+    }
 
     // Store all results
     let mut all_results: HashMap<String, Vec<SearchResult>> = HashMap::new();
@@ -628,6 +670,166 @@ async fn main() -> anyhow::Result<()> {
             sleep(Duration::from_secs(wait_time)).await;
         } else if !args.quiet {
             println!();
+        }
+    }
+
+    // People search sites (if enabled)
+    if args.people_search {
+        qprint!(args.quiet, args.no_color,
+            "\nSearching people lookup sites...".magenta().bold(),
+            "\nSearching people lookup sites...");
+
+        let phone_digits: String = phone_number.chars().filter(|c| c.is_numeric()).collect();
+        let mut people_results: Vec<SearchResult> = Vec::new();
+
+        // Determine which sites to search (if none specified, search all)
+        let search_all = !args.whitepages && !args.truepeoplesearch &&
+                        !args.fastpeoplesearch && !args.thatsthem && !args.usphonebook;
+
+        // Whitepages
+        if search_all || args.whitepages {
+            qprint_inline!(args.quiet, args.no_color,
+                "  → Searching Whitepages... ".cyan(),
+                "  → Searching Whitepages... ");
+            match whitepages::search_with_config(&phone_digits, &config).await {
+                Ok(results) => {
+                    let count = results.len();
+                    people_results.extend(results);
+                    qprint!(args.quiet, args.no_color,
+                        format!("({} results)", count).green(),
+                        format!("({} results)", count));
+                }
+                Err(e) if args.debug => {
+                    qprint!(args.quiet, args.no_color,
+                        format!("Error: {}", e).yellow(),
+                        format!("Error: {}", e));
+                }
+                Err(_) => {
+                    qprint!(args.quiet, args.no_color,
+                        "(0 results)".yellow(),
+                        "(0 results)");
+                }
+            }
+            sleep(Duration::from_secs(args.delay)).await;
+        }
+
+        // TruePeopleSearch
+        if search_all || args.truepeoplesearch {
+            qprint_inline!(args.quiet, args.no_color,
+                "  → Searching TruePeopleSearch... ".cyan(),
+                "  → Searching TruePeopleSearch... ");
+            match truepeoplesearch::search_with_config(&phone_digits, &config).await {
+                Ok(results) => {
+                    let count = results.len();
+                    people_results.extend(results);
+                    qprint!(args.quiet, args.no_color,
+                        format!("({} results)", count).green(),
+                        format!("({} results)", count));
+                }
+                Err(e) if args.debug => {
+                    qprint!(args.quiet, args.no_color,
+                        format!("Error: {}", e).yellow(),
+                        format!("Error: {}", e));
+                }
+                Err(_) => {
+                    qprint!(args.quiet, args.no_color,
+                        "(0 results)".yellow(),
+                        "(0 results)");
+                }
+            }
+            sleep(Duration::from_secs(args.delay)).await;
+        }
+
+        // FastPeopleSearch
+        if search_all || args.fastpeoplesearch {
+            qprint_inline!(args.quiet, args.no_color,
+                "  → Searching FastPeopleSearch... ".cyan(),
+                "  → Searching FastPeopleSearch... ");
+            match fastpeoplesearch::search_with_config(&phone_digits, &config).await {
+                Ok(results) => {
+                    let count = results.len();
+                    people_results.extend(results);
+                    qprint!(args.quiet, args.no_color,
+                        format!("({} results)", count).green(),
+                        format!("({} results)", count));
+                }
+                Err(e) if args.debug => {
+                    qprint!(args.quiet, args.no_color,
+                        format!("Error: {}", e).yellow(),
+                        format!("Error: {}", e));
+                }
+                Err(_) => {
+                    qprint!(args.quiet, args.no_color,
+                        "(0 results)".yellow(),
+                        "(0 results)");
+                }
+            }
+            sleep(Duration::from_secs(args.delay)).await;
+        }
+
+        // ThatsThem
+        if search_all || args.thatsthem {
+            qprint_inline!(args.quiet, args.no_color,
+                "  → Searching ThatsThem... ".cyan(),
+                "  → Searching ThatsThem... ");
+            match thatsthem::search_with_config(&phone_digits, &config).await {
+                Ok(results) => {
+                    let count = results.len();
+                    people_results.extend(results);
+                    qprint!(args.quiet, args.no_color,
+                        format!("({} results)", count).green(),
+                        format!("({} results)", count));
+                }
+                Err(e) if args.debug => {
+                    qprint!(args.quiet, args.no_color,
+                        format!("Error: {}", e).yellow(),
+                        format!("Error: {}", e));
+                }
+                Err(_) => {
+                    qprint!(args.quiet, args.no_color,
+                        "(0 results)".yellow(),
+                        "(0 results)");
+                }
+            }
+            sleep(Duration::from_secs(args.delay)).await;
+        }
+
+        // USPhoneBook
+        if search_all || args.usphonebook {
+            qprint_inline!(args.quiet, args.no_color,
+                "  → Searching USPhoneBook... ".cyan(),
+                "  → Searching USPhoneBook... ");
+            match usphonebook::search_with_config(&phone_digits, &config).await {
+                Ok(results) => {
+                    let count = results.len();
+                    people_results.extend(results);
+                    qprint!(args.quiet, args.no_color,
+                        format!("({} results)", count).green(),
+                        format!("({} results)", count));
+                }
+                Err(e) if args.debug => {
+                    qprint!(args.quiet, args.no_color,
+                        format!("Error: {}", e).yellow(),
+                        format!("Error: {}", e));
+                }
+                Err(_) => {
+                    qprint!(args.quiet, args.no_color,
+                        "(0 results)".yellow(),
+                        "(0 results)");
+                }
+            }
+        }
+
+        // Add people search results to all_results
+        if !people_results.is_empty() {
+            qprint!(args.quiet, args.no_color,
+                format!("  ✓ Total from people search sites: {} results\n", people_results.len()).green(),
+                format!("  Total from people search sites: {} results\n", people_results.len()));
+            all_results.insert("People Search Sites".to_string(), people_results);
+        } else {
+            qprint!(args.quiet, args.no_color,
+                "  No results from people search sites\n".yellow(),
+                "  No results from people search sites\n");
         }
     }
 

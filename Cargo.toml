@@ -1,6 +1,6 @@
 [package]
 name = "telespotter"
-version = "2.0.0"
+version = "2.1.0"
 edition = "2021"
 authors = ["Spin Apin <thumpersecure@github.com>"]
 description = "Phone number OSINT search tool for legal investigations - Multi-Engine Search"
@@ -47,6 +47,9 @@ chrono = "0.4"
 
 # URL encoding
 urlencoding = "2.1"
+
+# Random number generation
+rand = "0.8"
 
 [profile.release]
 opt-level = 3
