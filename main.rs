@@ -108,6 +108,22 @@ struct Args {
     /// Number of retry attempts for failed requests
     #[arg(long, default_value = "2")]
     retries: usize,
+
+    /// Auto-run Sherlock on found usernames (skips prompt)
+    #[arg(long)]
+    sherlock: bool,
+
+    /// Auto-run Blackbird on found emails (skips prompt)
+    #[arg(long)]
+    blackbird: bool,
+
+    /// Run email2phonenumber reverse lookup
+    #[arg(long)]
+    email2phone: bool,
+
+    /// Skip OSINT tool prompts (don't ask to run Sherlock/Blackbird)
+    #[arg(long)]
+    no_osint_prompts: bool,
 }
 
 /// Helper to determine if an engine should be used
@@ -263,6 +279,159 @@ macro_rules! qprint_inline {
             let _ = std::io::stdout().flush();
         }
     };
+}
+
+/// Run Sherlock tool on usernames
+fn run_sherlock(usernames: &[String], no_color: bool) -> std::io::Result<()> {
+    use std::process::Command;
+
+    println!();
+    if no_color {
+        println!("Running Sherlock on {} username(s)...", usernames.len());
+    } else {
+        println!("{}", format!("🔎 Running Sherlock on {} username(s)...", usernames.len()).cyan().bold());
+    }
+
+    for username in usernames {
+        if no_color {
+            println!("\n  Searching for: @{}", username);
+        } else {
+            println!("\n  {} @{}", "Searching for:".yellow(), username.green());
+        }
+
+        let output = Command::new("sherlock")
+            .arg(username)
+            .arg("--print-found")
+            .output();
+
+        match output {
+            Ok(result) => {
+                if result.status.success() {
+                    let stdout = String::from_utf8_lossy(&result.stdout);
+                    for line in stdout.lines().take(20) {
+                        println!("    {}", line);
+                    }
+                    if stdout.lines().count() > 20 {
+                        println!("    ... (truncated, see full output)");
+                    }
+                } else {
+                    let stderr = String::from_utf8_lossy(&result.stderr);
+                    eprintln!("    Sherlock error: {}", stderr.trim());
+                }
+            }
+            Err(e) => {
+                eprintln!("    Failed to run Sherlock: {}", e);
+                eprintln!("    Make sure Sherlock is installed: pip install sherlock-project");
+            }
+        }
+    }
+    Ok(())
+}
+
+/// Run Blackbird tool on emails
+fn run_blackbird(emails: &[String], no_color: bool) -> std::io::Result<()> {
+    use std::process::Command;
+
+    println!();
+    if no_color {
+        println!("Running Blackbird on {} email(s)...", emails.len());
+    } else {
+        println!("{}", format!("🐦 Running Blackbird on {} email(s)...", emails.len()).cyan().bold());
+    }
+
+    for email in emails {
+        if no_color {
+            println!("\n  Searching for: {}", email);
+        } else {
+            println!("\n  {} {}", "Searching for:".yellow(), email.green());
+        }
+
+        let output = Command::new("blackbird")
+            .arg("-e")
+            .arg(email)
+            .output();
+
+        match output {
+            Ok(result) => {
+                if result.status.success() {
+                    let stdout = String::from_utf8_lossy(&result.stdout);
+                    for line in stdout.lines().take(20) {
+                        println!("    {}", line);
+                    }
+                } else {
+                    let stderr = String::from_utf8_lossy(&result.stderr);
+                    eprintln!("    Blackbird error: {}", stderr.trim());
+                }
+            }
+            Err(e) => {
+                eprintln!("    Failed to run Blackbird: {}", e);
+                eprintln!("    Make sure Blackbird is installed: pip install blackbird");
+            }
+        }
+    }
+    Ok(())
+}
+
+/// Run email2phonenumber tool
+fn run_email2phone(emails: &[String], no_color: bool) -> std::io::Result<()> {
+    use std::process::Command;
+
+    println!();
+    if no_color {
+        println!("Running email2phonenumber on {} email(s)...", emails.len());
+    } else {
+        println!("{}", format!("📱 Running email2phonenumber on {} email(s)...", emails.len()).cyan().bold());
+    }
+
+    for email in emails {
+        if no_color {
+            println!("\n  Looking up: {}", email);
+        } else {
+            println!("\n  {} {}", "Looking up:".yellow(), email.green());
+        }
+
+        let output = Command::new("email2phonenumber")
+            .arg("scrape")
+            .arg("-e")
+            .arg(email)
+            .output();
+
+        match output {
+            Ok(result) => {
+                let stdout = String::from_utf8_lossy(&result.stdout);
+                let stderr = String::from_utf8_lossy(&result.stderr);
+                if !stdout.is_empty() {
+                    for line in stdout.lines() {
+                        println!("    {}", line);
+                    }
+                }
+                if !stderr.is_empty() && !result.status.success() {
+                    eprintln!("    {}", stderr.trim());
+                }
+            }
+            Err(e) => {
+                eprintln!("    Failed to run email2phonenumber: {}", e);
+                eprintln!("    Make sure it's installed: pip install email2phonenumber");
+            }
+        }
+    }
+    Ok(())
+}
+
+/// Prompt user for yes/no
+fn prompt_yes_no(prompt: &str, no_color: bool) -> bool {
+    if no_color {
+        print!("{} (y/n): ", prompt);
+    } else {
+        print!("{} (y/n): ", prompt.cyan());
+    }
+    let _ = std::io::stdout().flush();
+    let mut input = String::new();
+    if std::io::stdin().read_line(&mut input).is_ok() {
+        input.trim().to_lowercase() == "y"
+    } else {
+        false
+    }
 }
 
 #[tokio::main]
@@ -548,6 +717,20 @@ async fn main() -> anyhow::Result<()> {
                     }
                 }
 
+                if !patterns.emails.is_empty() {
+                    txt_content.push_str("\nEmails Found:\n");
+                    for (email, count) in &patterns.emails {
+                        txt_content.push_str(&format!("  - {}: {} occurrence(s)\n", email, count));
+                    }
+                }
+
+                if !patterns.usernames.is_empty() {
+                    txt_content.push_str("\nUsernames/Social Media Found:\n");
+                    for (username, count) in &patterns.usernames {
+                        txt_content.push_str(&format!("  - @{}: {} occurrence(s)\n", username, count));
+                    }
+                }
+
                 txt_content.push_str(&format!("\n{}\n", "=".repeat(60)));
                 txt_content.push_str("\nDetailed Results:\n\n");
 
@@ -569,6 +752,63 @@ async fn main() -> anyhow::Result<()> {
         qprint!(args.quiet, args.no_color,
             format!("Results saved to: {}\n", filename).green(),
             format!("Results saved to: {}\n", filename));
+    }
+
+    // OSINT Tool Integration
+    if !args.quiet {
+        let usernames = patterns.get_usernames();
+        let emails = patterns.get_emails();
+
+        // Sherlock integration for usernames
+        if patterns.has_usernames() {
+            let run_sherlock_tool = if args.sherlock {
+                true
+            } else if args.no_osint_prompts {
+                false
+            } else {
+                let prompt = format!(
+                    "Found {} username(s). Run Sherlock to find social media profiles?",
+                    usernames.len()
+                );
+                prompt_yes_no(&prompt, args.no_color)
+            };
+
+            if run_sherlock_tool {
+                let _ = run_sherlock(&usernames, args.no_color);
+            }
+        }
+
+        // Blackbird integration for emails
+        if patterns.has_emails() {
+            let run_blackbird_tool = if args.blackbird {
+                true
+            } else if args.no_osint_prompts {
+                false
+            } else {
+                let prompt = format!(
+                    "Found {} email(s). Run Blackbird to search for accounts?",
+                    emails.len()
+                );
+                prompt_yes_no(&prompt, args.no_color)
+            };
+
+            if run_blackbird_tool {
+                let _ = run_blackbird(&emails, args.no_color);
+            }
+
+            // email2phonenumber integration
+            let run_e2p = if args.email2phone {
+                true
+            } else if args.no_osint_prompts {
+                false
+            } else {
+                prompt_yes_no("Run email2phonenumber reverse lookup?", args.no_color)
+            };
+
+            if run_e2p {
+                let _ = run_email2phone(&emails, args.no_color);
+            }
+        }
     }
 
     Ok(())
