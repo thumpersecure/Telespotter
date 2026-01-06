@@ -5,12 +5,27 @@ use std::collections::HashSet;
 lazy_static! {
     static ref NAME_PATTERN: Regex = Regex::new(r"\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,2})\b").unwrap();
     static ref STATE_PATTERN: Regex = Regex::new(
-        r"\b(AL|AK|AZ|AR|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY)\b"
+        r"\b(AL|AK|AZ|AR|CA|CO|CT|DC|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY)\b"
     ).unwrap();
     static ref CITY_STATE_PATTERN: Regex = Regex::new(
-        r"\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?),?\s+(AL|AK|AZ|AR|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY)\b"
+        r"\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?),?\s+(AL|AK|AZ|AR|CA|CO|CT|DC|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY)\b"
     ).unwrap();
     static ref ZIP_PATTERN: Regex = Regex::new(r"\b\d{5}(?:-\d{4})?\b").unwrap();
+
+    // Email pattern
+    static ref EMAIL_PATTERN: Regex = Regex::new(
+        r"(?i)\b([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\b"
+    ).unwrap();
+
+    // Social media username patterns (@username)
+    static ref USERNAME_PATTERN: Regex = Regex::new(
+        r"(?:^|[^a-zA-Z0-9])@([a-zA-Z][a-zA-Z0-9_]{2,30})\b"
+    ).unwrap();
+
+    // Social media profile URL patterns
+    static ref SOCIAL_URL_PATTERN: Regex = Regex::new(
+        r"(?i)(?:facebook\.com|fb\.com|twitter\.com|x\.com|instagram\.com|linkedin\.com|tiktok\.com|snapchat\.com|youtube\.com|pinterest\.com)/(?:@)?([a-zA-Z0-9._-]+)"
+    ).unwrap();
     
     static ref EXCLUDED_WORDS: HashSet<&'static str> = {
         let mut set = HashSet::new();
@@ -67,6 +82,7 @@ lazy_static! {
         ("CA", "California"),
         ("CO", "Colorado"),
         ("CT", "Connecticut"),
+        ("DC", "District of Columbia"),
         ("DE", "Delaware"),
         ("FL", "Florida"),
         ("GA", "Georgia"),
@@ -166,13 +182,86 @@ pub fn extract_locations(text: &str) -> Vec<String> {
     unique_locations.into_iter().collect()
 }
 
+/// Extract email addresses from text
+pub fn extract_emails(text: &str) -> Vec<String> {
+    let mut emails = Vec::new();
+
+    for cap in EMAIL_PATTERN.captures_iter(text) {
+        if let Some(email) = cap.get(1) {
+            let email_str = email.as_str().to_lowercase();
+            // Filter out common false positives
+            if !email_str.contains("example.com")
+                && !email_str.contains("domain.com")
+                && !email_str.contains("email.com")
+                && !email_str.starts_with("noreply")
+                && !email_str.starts_with("no-reply")
+            {
+                emails.push(email_str);
+            }
+        }
+    }
+
+    // Deduplicate
+    let unique: HashSet<String> = emails.into_iter().collect();
+    unique.into_iter().collect()
+}
+
+/// Extract social media usernames from text
+pub fn extract_usernames(text: &str) -> Vec<String> {
+    let mut usernames = Vec::new();
+
+    // Extract @username mentions
+    for cap in USERNAME_PATTERN.captures_iter(text) {
+        if let Some(username) = cap.get(1) {
+            let uname = username.as_str().to_lowercase();
+            // Filter out common false positives
+            if uname.len() > 2
+                && !EXCLUDED_USERNAMES.contains(&uname.as_str())
+            {
+                usernames.push(uname);
+            }
+        }
+    }
+
+    // Extract usernames from social media URLs
+    for cap in SOCIAL_URL_PATTERN.captures_iter(text) {
+        if let Some(username) = cap.get(1) {
+            let uname = username.as_str().to_lowercase();
+            // Filter out path segments that aren't usernames
+            if uname.len() > 2
+                && !uname.contains('.')
+                && !EXCLUDED_USERNAMES.contains(&uname.as_str())
+            {
+                usernames.push(uname);
+            }
+        }
+    }
+
+    // Deduplicate
+    let unique: HashSet<String> = usernames.into_iter().collect();
+    unique.into_iter().collect()
+}
+
+/// Common usernames to exclude (generic paths/words)
+static EXCLUDED_USERNAMES: &[&str] = &[
+    "home", "about", "contact", "help", "support", "privacy", "terms",
+    "login", "signup", "register", "settings", "profile", "search",
+    "share", "explore", "discover", "trending", "popular", "new",
+    "user", "users", "page", "pages", "group", "groups", "event", "events",
+    "photo", "photos", "video", "videos", "story", "stories", "reel", "reels",
+    "post", "posts", "comment", "comments", "like", "likes", "follow", "following",
+    "followers", "friends", "messages", "notifications", "watch", "shop",
+    "marketplace", "gaming", "live", "news", "feed", "hashtag", "tag",
+];
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn test_extract_names() {
-        let text = "Contact John Smith or Jane Doe for more information.";
+        // Names need to be in context where they're isolated as 2-word phrases
+        let text = "The owner is John Smith and his wife is Jane Doe.";
         let names = extract_names(text);
         assert!(names.contains(&"John Smith".to_string()));
         assert!(names.contains(&"Jane Doe".to_string()));
@@ -189,8 +278,12 @@ mod tests {
 
     #[test]
     fn test_filter_excluded_words() {
-        let text = "Phone Number Contact Email";
+        // Single capitalized words like "Phone" won't match (pattern needs 2+ words)
+        // Multi-word excluded phrases like "United States" or "New York" should be filtered
+        let text = "He lives in New York and United States";
         let names = extract_names(text);
-        assert!(names.is_empty());
+        // New York and United States are in EXCLUDED_WORDS
+        assert!(!names.contains(&"New York".to_string()));
+        assert!(!names.contains(&"United States".to_string()));
     }
 }

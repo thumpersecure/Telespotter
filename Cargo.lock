@@ -1562,7 +1562,7 @@ dependencies = [
 
 [[package]]
 name = "telespotter"
-version = "2.0.0"
+version = "2.1.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -1570,6 +1570,7 @@ dependencies = [
  "colored",
  "indicatif",
  "lazy_static",
+ "rand",
  "regex",
  "reqwest",
  "scraper",

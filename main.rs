@@ -1,3 +1,4 @@
+use chrono::Utc;
 use clap::{Parser, ValueEnum};
 use colored::*;
 use std::collections::HashMap;
@@ -14,6 +15,13 @@ mod duckduckgo;
 mod parser;
 mod analysis;
 
+// People search site modules
+mod whitepages;
+mod truepeoplesearch;
+mod fastpeoplesearch;
+mod thatsthem;
+mod usphonebook;
+
 use crate::phone::PhoneFormatter;
 use crate::search::{SearchResult, SearchConfig};
 use crate::analysis::PatternAnalyzer;
@@ -25,7 +33,7 @@ const ASCII_LOGO: &str = r#"
    ██║   ██╔══╝  ██║     ██╔══╝  ╚════██║██╔═══╝ ██║   ██║   ██║      ██║   ██╔══╝  ██╔══██╗
    ██║   ███████╗███████╗███████╗███████║██║     ╚██████╔╝   ██║      ██║   ███████╗██║  ██║
    ╚═╝   ╚══════╝╚══════╝╚══════╝╚══════╝╚═╝      ╚═════╝    ╚═╝      ╚═╝   ╚══════╝╚═╝  ╚═╝
-                                                                              version 2.0
+                                                                              version 2.1
 "#;
 
 /// Output format options
@@ -101,6 +109,14 @@ struct Args {
     #[arg(long, default_value = "10")]
     max_locations: usize,
 
+    /// Maximum number of emails to display in results
+    #[arg(long, default_value = "10")]
+    max_emails: usize,
+
+    /// Maximum number of usernames to display in results
+    #[arg(long, default_value = "10")]
+    max_usernames: usize,
+
     /// Enable concurrent searches across engines (faster but may trigger rate limits)
     #[arg(short = 'c', long)]
     concurrent: bool,
@@ -108,6 +124,50 @@ struct Args {
     /// Number of retry attempts for failed requests
     #[arg(long, default_value = "2")]
     retries: usize,
+
+    /// Auto-run Sherlock on found usernames (skips prompt)
+    #[arg(long)]
+    sherlock: bool,
+
+    /// Auto-run Blackbird on found emails (skips prompt)
+    #[arg(long)]
+    blackbird: bool,
+
+    /// Run email2phonenumber reverse lookup
+    #[arg(long)]
+    email2phone: bool,
+
+    /// Skip OSINT tool prompts (don't ask to run Sherlock/Blackbird)
+    #[arg(long)]
+    no_osint_prompts: bool,
+
+    /// Use random user agent for each request (helps avoid detection)
+    #[arg(long)]
+    random_ua: bool,
+
+    /// Search people lookup sites (Whitepages, TruePeopleSearch, etc.)
+    #[arg(short = 'p', long)]
+    people_search: bool,
+
+    /// Enable only Whitepages search (use with --people-search)
+    #[arg(long)]
+    whitepages: bool,
+
+    /// Enable only TruePeopleSearch (use with --people-search)
+    #[arg(long)]
+    truepeoplesearch: bool,
+
+    /// Enable only FastPeopleSearch (use with --people-search)
+    #[arg(long)]
+    fastpeoplesearch: bool,
+
+    /// Enable only ThatsThem search (use with --people-search)
+    #[arg(long)]
+    thatsthem: bool,
+
+    /// Enable only USPhoneBook search (use with --people-search)
+    #[arg(long)]
+    usphonebook: bool,
 }
 
 /// Helper to determine if an engine should be used
@@ -265,6 +325,159 @@ macro_rules! qprint_inline {
     };
 }
 
+/// Run Sherlock tool on usernames
+fn run_sherlock(usernames: &[String], no_color: bool) -> std::io::Result<()> {
+    use std::process::Command;
+
+    println!();
+    if no_color {
+        println!("Running Sherlock on {} username(s)...", usernames.len());
+    } else {
+        println!("{}", format!("🔎 Running Sherlock on {} username(s)...", usernames.len()).cyan().bold());
+    }
+
+    for username in usernames {
+        if no_color {
+            println!("\n  Searching for: @{}", username);
+        } else {
+            println!("\n  {} @{}", "Searching for:".yellow(), username.green());
+        }
+
+        let output = Command::new("sherlock")
+            .arg(username)
+            .arg("--print-found")
+            .output();
+
+        match output {
+            Ok(result) => {
+                if result.status.success() {
+                    let stdout = String::from_utf8_lossy(&result.stdout);
+                    for line in stdout.lines().take(20) {
+                        println!("    {}", line);
+                    }
+                    if stdout.lines().count() > 20 {
+                        println!("    ... (truncated, see full output)");
+                    }
+                } else {
+                    let stderr = String::from_utf8_lossy(&result.stderr);
+                    eprintln!("    Sherlock error: {}", stderr.trim());
+                }
+            }
+            Err(e) => {
+                eprintln!("    Failed to run Sherlock: {}", e);
+                eprintln!("    Make sure Sherlock is installed: pip install sherlock-project");
+            }
+        }
+    }
+    Ok(())
+}
+
+/// Run Blackbird tool on emails
+fn run_blackbird(emails: &[String], no_color: bool) -> std::io::Result<()> {
+    use std::process::Command;
+
+    println!();
+    if no_color {
+        println!("Running Blackbird on {} email(s)...", emails.len());
+    } else {
+        println!("{}", format!("🐦 Running Blackbird on {} email(s)...", emails.len()).cyan().bold());
+    }
+
+    for email in emails {
+        if no_color {
+            println!("\n  Searching for: {}", email);
+        } else {
+            println!("\n  {} {}", "Searching for:".yellow(), email.green());
+        }
+
+        let output = Command::new("blackbird")
+            .arg("-e")
+            .arg(email)
+            .output();
+
+        match output {
+            Ok(result) => {
+                if result.status.success() {
+                    let stdout = String::from_utf8_lossy(&result.stdout);
+                    for line in stdout.lines().take(20) {
+                        println!("    {}", line);
+                    }
+                } else {
+                    let stderr = String::from_utf8_lossy(&result.stderr);
+                    eprintln!("    Blackbird error: {}", stderr.trim());
+                }
+            }
+            Err(e) => {
+                eprintln!("    Failed to run Blackbird: {}", e);
+                eprintln!("    Make sure Blackbird is installed: pip install blackbird");
+            }
+        }
+    }
+    Ok(())
+}
+
+/// Run email2phonenumber tool
+fn run_email2phone(emails: &[String], no_color: bool) -> std::io::Result<()> {
+    use std::process::Command;
+
+    println!();
+    if no_color {
+        println!("Running email2phonenumber on {} email(s)...", emails.len());
+    } else {
+        println!("{}", format!("📱 Running email2phonenumber on {} email(s)...", emails.len()).cyan().bold());
+    }
+
+    for email in emails {
+        if no_color {
+            println!("\n  Looking up: {}", email);
+        } else {
+            println!("\n  {} {}", "Looking up:".yellow(), email.green());
+        }
+
+        let output = Command::new("email2phonenumber")
+            .arg("scrape")
+            .arg("-e")
+            .arg(email)
+            .output();
+
+        match output {
+            Ok(result) => {
+                let stdout = String::from_utf8_lossy(&result.stdout);
+                let stderr = String::from_utf8_lossy(&result.stderr);
+                if !stdout.is_empty() {
+                    for line in stdout.lines() {
+                        println!("    {}", line);
+                    }
+                }
+                if !stderr.is_empty() && !result.status.success() {
+                    eprintln!("    {}", stderr.trim());
+                }
+            }
+            Err(e) => {
+                eprintln!("    Failed to run email2phonenumber: {}", e);
+                eprintln!("    Make sure it's installed: pip install email2phonenumber");
+            }
+        }
+    }
+    Ok(())
+}
+
+/// Prompt user for yes/no
+fn prompt_yes_no(prompt: &str, no_color: bool) -> bool {
+    if no_color {
+        print!("{} (y/n): ", prompt);
+    } else {
+        print!("{} (y/n): ", prompt.cyan());
+    }
+    let _ = std::io::stdout().flush();
+    let mut input = String::new();
+    if std::io::stdin().read_line(&mut input).is_ok() {
+        input.trim().to_lowercase() == "y"
+    } else {
+        false
+    }
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let args = Args::parse();
@@ -314,7 +527,14 @@ async fn main() -> anyhow::Result<()> {
     // Create search config
     let config = SearchConfig {
         timeout_secs: args.timeout,
+        random_user_agent: args.random_ua,
     };
+
+    if args.random_ua && !args.quiet {
+        qprint!(args.quiet, args.no_color,
+            "Random user agent rotation enabled".green(),
+            "Random user agent rotation enabled");
+    }
 
     // Store all results
     let mut all_results: HashMap<String, Vec<SearchResult>> = HashMap::new();
@@ -438,8 +658,9 @@ async fn main() -> anyhow::Result<()> {
 
         if args.debug && !format_results.is_empty() && !args.quiet {
             let sample = &format_results[0].title;
-            let truncated = if sample.len() > 60 {
-                format!("{}...", &sample[..60])
+            let truncated = if sample.chars().count() > 60 {
+                let end_idx = sample.char_indices().nth(60).map(|(i, _)| i).unwrap_or(sample.len());
+                format!("{}...", &sample[..end_idx])
             } else {
                 sample.clone()
             };
@@ -462,12 +683,172 @@ async fn main() -> anyhow::Result<()> {
         }
     }
 
+    // People search sites (if enabled)
+    if args.people_search {
+        qprint!(args.quiet, args.no_color,
+            "\nSearching people lookup sites...".magenta().bold(),
+            "\nSearching people lookup sites...");
+
+        let phone_digits: String = phone_number.chars().filter(|c| c.is_numeric()).collect();
+        let mut people_results: Vec<SearchResult> = Vec::new();
+
+        // Determine which sites to search (if none specified, search all)
+        let search_all = !args.whitepages && !args.truepeoplesearch &&
+                        !args.fastpeoplesearch && !args.thatsthem && !args.usphonebook;
+
+        // Whitepages
+        if search_all || args.whitepages {
+            qprint_inline!(args.quiet, args.no_color,
+                "  → Searching Whitepages... ".cyan(),
+                "  → Searching Whitepages... ");
+            match whitepages::search_with_config(&phone_digits, &config).await {
+                Ok(results) => {
+                    let count = results.len();
+                    people_results.extend(results);
+                    qprint!(args.quiet, args.no_color,
+                        format!("({} results)", count).green(),
+                        format!("({} results)", count));
+                }
+                Err(e) if args.debug => {
+                    qprint!(args.quiet, args.no_color,
+                        format!("Error: {}", e).yellow(),
+                        format!("Error: {}", e));
+                }
+                Err(_) => {
+                    qprint!(args.quiet, args.no_color,
+                        "(0 results)".yellow(),
+                        "(0 results)");
+                }
+            }
+            sleep(Duration::from_secs(args.delay)).await;
+        }
+
+        // TruePeopleSearch
+        if search_all || args.truepeoplesearch {
+            qprint_inline!(args.quiet, args.no_color,
+                "  → Searching TruePeopleSearch... ".cyan(),
+                "  → Searching TruePeopleSearch... ");
+            match truepeoplesearch::search_with_config(&phone_digits, &config).await {
+                Ok(results) => {
+                    let count = results.len();
+                    people_results.extend(results);
+                    qprint!(args.quiet, args.no_color,
+                        format!("({} results)", count).green(),
+                        format!("({} results)", count));
+                }
+                Err(e) if args.debug => {
+                    qprint!(args.quiet, args.no_color,
+                        format!("Error: {}", e).yellow(),
+                        format!("Error: {}", e));
+                }
+                Err(_) => {
+                    qprint!(args.quiet, args.no_color,
+                        "(0 results)".yellow(),
+                        "(0 results)");
+                }
+            }
+            sleep(Duration::from_secs(args.delay)).await;
+        }
+
+        // FastPeopleSearch
+        if search_all || args.fastpeoplesearch {
+            qprint_inline!(args.quiet, args.no_color,
+                "  → Searching FastPeopleSearch... ".cyan(),
+                "  → Searching FastPeopleSearch... ");
+            match fastpeoplesearch::search_with_config(&phone_digits, &config).await {
+                Ok(results) => {
+                    let count = results.len();
+                    people_results.extend(results);
+                    qprint!(args.quiet, args.no_color,
+                        format!("({} results)", count).green(),
+                        format!("({} results)", count));
+                }
+                Err(e) if args.debug => {
+                    qprint!(args.quiet, args.no_color,
+                        format!("Error: {}", e).yellow(),
+                        format!("Error: {}", e));
+                }
+                Err(_) => {
+                    qprint!(args.quiet, args.no_color,
+                        "(0 results)".yellow(),
+                        "(0 results)");
+                }
+            }
+            sleep(Duration::from_secs(args.delay)).await;
+        }
+
+        // ThatsThem
+        if search_all || args.thatsthem {
+            qprint_inline!(args.quiet, args.no_color,
+                "  → Searching ThatsThem... ".cyan(),
+                "  → Searching ThatsThem... ");
+            match thatsthem::search_with_config(&phone_digits, &config).await {
+                Ok(results) => {
+                    let count = results.len();
+                    people_results.extend(results);
+                    qprint!(args.quiet, args.no_color,
+                        format!("({} results)", count).green(),
+                        format!("({} results)", count));
+                }
+                Err(e) if args.debug => {
+                    qprint!(args.quiet, args.no_color,
+                        format!("Error: {}", e).yellow(),
+                        format!("Error: {}", e));
+                }
+                Err(_) => {
+                    qprint!(args.quiet, args.no_color,
+                        "(0 results)".yellow(),
+                        "(0 results)");
+                }
+            }
+            sleep(Duration::from_secs(args.delay)).await;
+        }
+
+        // USPhoneBook
+        if search_all || args.usphonebook {
+            qprint_inline!(args.quiet, args.no_color,
+                "  → Searching USPhoneBook... ".cyan(),
+                "  → Searching USPhoneBook... ");
+            match usphonebook::search_with_config(&phone_digits, &config).await {
+                Ok(results) => {
+                    let count = results.len();
+                    people_results.extend(results);
+                    qprint!(args.quiet, args.no_color,
+                        format!("({} results)", count).green(),
+                        format!("({} results)", count));
+                }
+                Err(e) if args.debug => {
+                    qprint!(args.quiet, args.no_color,
+                        format!("Error: {}", e).yellow(),
+                        format!("Error: {}", e));
+                }
+                Err(_) => {
+                    qprint!(args.quiet, args.no_color,
+                        "(0 results)".yellow(),
+                        "(0 results)");
+                }
+            }
+        }
+
+        // Add people search results to all_results
+        if !people_results.is_empty() {
+            qprint!(args.quiet, args.no_color,
+                format!("  ✓ Total from people search sites: {} results\n", people_results.len()).green(),
+                format!("  Total from people search sites: {} results\n", people_results.len()));
+            all_results.insert("People Search Sites".to_string(), people_results);
+        } else {
+            qprint!(args.quiet, args.no_color,
+                "  No results from people search sites\n".yellow(),
+                "  No results from people search sites\n");
+        }
+    }
+
     // Analyze patterns
     qprint!(args.quiet, args.no_color,
         "Analyzing patterns across all results...".yellow(),
         "Analyzing patterns across all results...");
     let analyzer = PatternAnalyzer::new();
-    let patterns = analyzer.analyze(&all_results, args.max_names, args.max_locations);
+    let patterns = analyzer.analyze(&all_results, args.max_names, args.max_locations, args.max_emails, args.max_usernames);
 
     // Print summary (unless quiet mode)
     if !args.quiet {
@@ -508,6 +889,8 @@ async fn main() -> anyhow::Result<()> {
         match args.format {
             OutputFormat::Json => {
                 let output = serde_json::json!({
+                    "version": env!("CARGO_PKG_VERSION"),
+                    "timestamp": Utc::now().to_rfc3339(),
                     "phone_number": phone_number,
                     "search_formats": formats,
                     "results": all_results,
@@ -519,10 +902,12 @@ async fn main() -> anyhow::Result<()> {
                 let mut csv_content = String::from("Source,Title,Snippet\n");
                 for results in all_results.values() {
                     for result in results {
-                        let title = result.title.replace('"', "\"\"");
-                        let snippet = result.snippet.replace('"', "\"\"");
+                        // Escape quotes by doubling them and escape newlines
+                        let title = result.title.replace('"', "\"\"").replace('\n', " ").replace('\r', "");
+                        let snippet = result.snippet.replace('"', "\"\"").replace('\n', " ").replace('\r', "");
+                        let source = result.source.replace('"', "\"\"");
                         csv_content.push_str(&format!("\"{}\",\"{}\",\"{}\"\n",
-                            result.source, title, snippet));
+                            source, title, snippet));
                     }
                 }
                 fs::write(&filename, csv_content)?;
@@ -548,6 +933,20 @@ async fn main() -> anyhow::Result<()> {
                     }
                 }
 
+                if !patterns.emails.is_empty() {
+                    txt_content.push_str("\nEmails Found:\n");
+                    for (email, count) in &patterns.emails {
+                        txt_content.push_str(&format!("  - {}: {} occurrence(s)\n", email, count));
+                    }
+                }
+
+                if !patterns.usernames.is_empty() {
+                    txt_content.push_str("\nUsernames/Social Media Found:\n");
+                    for (username, count) in &patterns.usernames {
+                        txt_content.push_str(&format!("  - @{}: {} occurrence(s)\n", username, count));
+                    }
+                }
+
                 txt_content.push_str(&format!("\n{}\n", "=".repeat(60)));
                 txt_content.push_str("\nDetailed Results:\n\n");
 
@@ -569,6 +968,63 @@ async fn main() -> anyhow::Result<()> {
         qprint!(args.quiet, args.no_color,
             format!("Results saved to: {}\n", filename).green(),
             format!("Results saved to: {}\n", filename));
+    }
+
+    // OSINT Tool Integration
+    if !args.quiet {
+        let usernames = patterns.get_usernames();
+        let emails = patterns.get_emails();
+
+        // Sherlock integration for usernames
+        if patterns.has_usernames() {
+            let run_sherlock_tool = if args.sherlock {
+                true
+            } else if args.no_osint_prompts {
+                false
+            } else {
+                let prompt = format!(
+                    "Found {} username(s). Run Sherlock to find social media profiles?",
+                    usernames.len()
+                );
+                prompt_yes_no(&prompt, args.no_color)
+            };
+
+            if run_sherlock_tool {
+                let _ = run_sherlock(&usernames, args.no_color);
+            }
+        }
+
+        // Blackbird integration for emails
+        if patterns.has_emails() {
+            let run_blackbird_tool = if args.blackbird {
+                true
+            } else if args.no_osint_prompts {
+                false
+            } else {
+                let prompt = format!(
+                    "Found {} email(s). Run Blackbird to search for accounts?",
+                    emails.len()
+                );
+                prompt_yes_no(&prompt, args.no_color)
+            };
+
+            if run_blackbird_tool {
+                let _ = run_blackbird(&emails, args.no_color);
+            }
+
+            // email2phonenumber integration
+            let run_e2p = if args.email2phone {
+                true
+            } else if args.no_osint_prompts {
+                false
+            } else {
+                prompt_yes_no("Run email2phonenumber reverse lookup?", args.no_color)
+            };
+
+            if run_e2p {
+                let _ = run_email2phone(&emails, args.no_color);
+            }
+        }
     }
 
     Ok(())

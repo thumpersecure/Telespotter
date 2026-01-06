@@ -1,4 +1,4 @@
-use crate::parser::{extract_locations, extract_names};
+use crate::parser::{extract_emails, extract_locations, extract_names, extract_usernames};
 use crate::search::SearchResult;
 use colored::*;
 use serde::{Deserialize, Serialize};
@@ -10,6 +10,8 @@ pub struct PatternAnalysis {
     pub results_by_source: HashMap<String, usize>,
     pub common_names: Vec<(String, usize)>,
     pub common_locations: Vec<(String, usize)>,
+    pub emails: Vec<(String, usize)>,
+    pub usernames: Vec<(String, usize)>,
 }
 
 impl PatternAnalysis {
@@ -101,6 +103,40 @@ impl PatternAnalysis {
             }
         }
 
+        // Email patterns
+        if !self.emails.is_empty() {
+            if no_color {
+                println!("Emails Found:");
+            } else {
+                println!("{}", "📧 Emails Found:".blue().bold());
+            }
+            for (email, count) in &self.emails {
+                if no_color {
+                    println!("  - {}: {} occurrence(s)", email, count);
+                } else {
+                    println!("  • {}: {} occurrence(s)", email.green(), count);
+                }
+            }
+            println!();
+        }
+
+        // Username patterns
+        if !self.usernames.is_empty() {
+            if no_color {
+                println!("Usernames/Social Media Found:");
+            } else {
+                println!("{}", "👤 Usernames/Social Media Found:".blue().bold());
+            }
+            for (username, count) in &self.usernames {
+                if no_color {
+                    println!("  - @{}: {} occurrence(s)", username, count);
+                } else {
+                    println!("  • @{}: {} occurrence(s)", username.green(), count);
+                }
+            }
+            println!();
+        }
+
         // Key insights
         if no_color {
             println!("Key Insights:");
@@ -159,7 +195,29 @@ impl PatternAnalysis {
             "results_by_source": self.results_by_source,
             "common_names": self.common_names,
             "common_locations": self.common_locations,
+            "emails": self.emails,
+            "usernames": self.usernames,
         })
+    }
+
+    /// Check if any usernames were found (for Sherlock integration)
+    pub fn has_usernames(&self) -> bool {
+        !self.usernames.is_empty()
+    }
+
+    /// Check if any emails were found (for Blackbird integration)
+    pub fn has_emails(&self) -> bool {
+        !self.emails.is_empty()
+    }
+
+    /// Get unique usernames for external tool integration
+    pub fn get_usernames(&self) -> Vec<String> {
+        self.usernames.iter().map(|(u, _)| u.clone()).collect()
+    }
+
+    /// Get unique emails for external tool integration
+    pub fn get_emails(&self) -> Vec<String> {
+        self.emails.iter().map(|(e, _)| e.clone()).collect()
     }
 }
 
@@ -170,7 +228,7 @@ impl PatternAnalyzer {
         PatternAnalyzer
     }
 
-    pub fn analyze(&self, all_results: &HashMap<String, Vec<SearchResult>>, max_names: usize, max_locations: usize) -> PatternAnalysis {
+    pub fn analyze(&self, all_results: &HashMap<String, Vec<SearchResult>>, max_names: usize, max_locations: usize, max_emails: usize, max_usernames: usize) -> PatternAnalysis {
         let mut all_text = Vec::new();
         let mut source_counts: HashMap<String, usize> = HashMap::new();
 
@@ -186,13 +244,17 @@ impl PatternAnalyzer {
         // Combine all text
         let combined_text = all_text.join(" ");
 
-        // Extract names and locations
+        // Extract names, locations, emails, and usernames
         let names = extract_names(&combined_text);
         let locations = extract_locations(&combined_text);
+        let emails_list = extract_emails(&combined_text);
+        let usernames_list = extract_usernames(&combined_text);
 
         // Count occurrences
         let name_counts = count_occurrences(&names);
         let location_counts = count_occurrences(&locations);
+        let email_counts = count_occurrences(&emails_list);
+        let username_counts = count_occurrences(&usernames_list);
 
         // Sort by frequency and take top N (configurable)
         let mut common_names: Vec<(String, usize)> = name_counts.into_iter().collect();
@@ -203,11 +265,21 @@ impl PatternAnalyzer {
         common_locations.sort_by(|a, b| b.1.cmp(&a.1));
         common_locations.truncate(max_locations);
 
+        let mut emails: Vec<(String, usize)> = email_counts.into_iter().collect();
+        emails.sort_by(|a, b| b.1.cmp(&a.1));
+        emails.truncate(max_emails);
+
+        let mut usernames: Vec<(String, usize)> = username_counts.into_iter().collect();
+        usernames.sort_by(|a, b| b.1.cmp(&a.1));
+        usernames.truncate(max_usernames);
+
         PatternAnalysis {
             total_results: all_text.len(),
             results_by_source: source_counts,
             common_names,
             common_locations,
+            emails,
+            usernames,
         }
     }
 }

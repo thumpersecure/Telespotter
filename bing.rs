@@ -11,7 +11,9 @@ pub async fn search(query: &str, num_results: usize) -> Result<Vec<SearchResult>
 /// Search Bing with custom configuration
 pub async fn search_with_config(query: &str, num_results: usize, config: &SearchConfig) -> Result<Vec<SearchResult>> {
     let client = create_client_from_config(config);
-    let encoded_query = urlencoding::encode(query);
+    // Wrap query in quotes for exact phrase matching
+    let quoted_query = format!("\"{}\"", query);
+    let encoded_query = urlencoding::encode(&quoted_query);
     let url = format!(
         "https://www.bing.com/search?q={}&count={}",
         encoded_query, num_results
