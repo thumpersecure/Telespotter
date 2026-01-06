@@ -1,460 +1,256 @@
-# 📞 TeleSpotter 🔍
+<div align="center">
 
+<!-- Animated Typing Header -->
+<a href="https://github.com/thumpersecure/telespotter">
+  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=28&duration=3000&pause=1000&color=00D4FF&center=true&vCenter=true&multiline=true&repeat=true&width=600&height=100&lines=%F0%9F%93%9E+TELESPOTTER+%F0%9F%94%8D;Phone+Number+OSINT+Tool;Written+in+Rust+%F0%9F%A6%80" alt="TeleSpotter" />
+</a>
+
+<!-- Compact ASCII Logo -->
 ```
-████████╗███████╗██╗     ███████╗███████╗██████╗  ██████╗ ████████╗████████╗███████╗██████╗
-╚══██╔══╝██╔════╝██║     ██╔════╝██╔════╝██╔══██╗██╔═══██╗╚══██╔══╝╚══██╔══╝██╔════╝██╔══██╗
-   ██║   █████╗  ██║     █████╗  ███████╗██████╔╝██║   ██║   ██║      ██║   █████╗  ██████╔╝
-   ██║   ██╔══╝  ██║     ██╔══╝  ╚════██║██╔═══╝ ██║   ██║   ██║      ██║   ██╔══╝  ██╔══██╗
-   ██║   ███████╗███████╗███████╗███████║██║     ╚██████╔╝   ██║      ██║   ███████╗██║  ██║
-   ╚═╝   ╚══════╝╚══════╝╚══════╝╚══════╝╚═╝      ╚═════╝    ╚═╝      ╚═╝   ╚══════╝╚═╝  ╚═╝
-                                                                              version 2.1
+  ______     __     ____                  __  __
+ /_  __/__  / /__  / __/__  ___  ______  / /_/ /____  _____
+  / / / _ \/ / _ \_\ \/ _ \/ _ \/ __/ / / __/ __/ _ \/ ___/
+ / / /  __/ /  __/___/ .__/\___/\__/\__/\__/\__/\___/_/
+/_/  \___/_/\___/   /_/                           v2.1.0
 ```
 
-[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
-[![Rust](https://img.shields.io/badge/Rust-1.70+-orange?logo=rust)](https://www.rust-lang.org/)
-[![Version](https://img.shields.io/badge/Version-2.1.0-blue)](https://github.com/thumpersecure/telespotter)
+<!-- Blue Gradient Line -->
+<img src="https://capsule-render.vercel.app/api?type=rect&color=gradient&customColorList=0,2,2,5,30&height=2&section=header" width="100%"/>
 
-> 🚀 **A blazingly fast phone number OSINT tool written in Rust** — Search across multiple engines and people lookup sites to gather intelligence on any phone number.
+<!-- Badges -->
+[![License](https://img.shields.io/badge/License-MIT-00d4ff?style=for-the-badge)](LICENSE)
+[![Rust](https://img.shields.io/badge/Rust-1.70+-ff6b35?style=for-the-badge&logo=rust&logoColor=white)](https://www.rust-lang.org/)
+[![Version](https://img.shields.io/badge/Version-2.1.0-7c3aed?style=for-the-badge)](https://github.com/thumpersecure/telespotter)
+[![Stars](https://img.shields.io/github/stars/thumpersecure/telespotter?style=for-the-badge&color=fbbf24)](https://github.com/thumpersecure/telespotter)
 
----
+**A blazingly fast phone number OSINT tool** — Search across multiple engines and people lookup sites to gather intelligence on any phone number.
+
+<img src="https://capsule-render.vercel.app/api?type=rect&color=gradient&customColorList=0,2,2,5,30&height=2&section=header" width="100%"/>
+
+</div>
+
+## ⚡ Quick Start
+
+```bash
+git clone https://github.com/thumpersecure/telespotter.git && cd telespotter
+cargo build --release
+./target/release/telespotter 5551234567 -p --random-ua -c -s
+```
+
+<img src="https://capsule-render.vercel.app/api?type=rect&color=0:00d4ff,100:7c3aed&height=1" width="100%"/>
 
 ## 🌟 What's New in v2.1
 
-- 🎭 **Random User Agent Rotation** — Avoid detection with 15 different browser signatures
-- 🔍 **People Search Sites** — Search Whitepages, TruePeopleSearch, FastPeopleSearch, ThatsThem & USPhoneBook
-- 📧 **Email Extraction** — Automatically find associated email addresses
-- 👤 **Username Detection** — Find social media handles from results
-- 🔗 **OSINT Tool Integration** — Auto-prompt for Sherlock, Blackbird & email2phonenumber
+| Feature | Description |
+|---------|-------------|
+| 🎭 **Random User Agent** | 15 browser signatures to avoid detection |
+| 🏠 **People Search** | Whitepages, TruePeopleSearch, FastPeopleSearch, ThatsThem, USPhoneBook |
+| 📧 **Email Extraction** | Auto-find associated email addresses |
+| 👤 **Username Detection** | Find social media handles |
+| 🔗 **OSINT Integration** | Sherlock, Blackbird & email2phonenumber |
+| 📍 **DC Support** | District of Columbia now recognized |
+| 📊 **JSON Metadata** | Version & timestamp in output files |
 
----
+<img src="https://capsule-render.vercel.app/api?type=rect&color=0:00d4ff,100:7c3aed&height=1" width="100%"/>
 
-## ✨ Features
+## 🔍 Search Sources
 
-### 🔎 Multi-Engine Search
-| Engine | Description |
-|--------|-------------|
-| 🔵 **Google** | Web scraping with retry logic |
-| 🟢 **Bing** | Microsoft search engine |
-| 🦆 **DuckDuckGo** | Privacy-focused search |
+<table>
+<tr>
+<td width="50%">
 
-### 🏠 People Search Sites
-| Site | What It Finds |
-|------|---------------|
-| 📖 **Whitepages** | Names, addresses, phone records |
-| 👥 **TruePeopleSearch** | Owner info, relatives, associates |
-| ⚡ **FastPeopleSearch** | Quick lookups with age info |
-| 🎯 **ThatsThem** | Comprehensive people data |
-| 📱 **USPhoneBook** | Phone carrier & owner details |
+### 🌐 Search Engines
+| Engine | Status |
+|--------|--------|
+| Google | ✅ |
+| Bing | ✅ |
+| DuckDuckGo | ✅ |
 
-### 📊 Pattern Analysis
-- 📛 **Names** — People associated with the number
-- 📍 **Locations** — Cities, states, ZIP codes
-- 📧 **Emails** — Associated email addresses
-- 👤 **Usernames** — Social media handles (@mentions)
-- 🔗 **Social Profiles** — Extracted from URLs
+</td>
+<td width="50%">
 
-### 🛡️ Anti-Detection
-- 🎭 **15 User Agents** — Chrome, Firefox, Safari, Edge on Windows/macOS/Linux
-- ⏱️ **Rate Limiting** — Configurable delays between requests
-- 🔄 **Retry Logic** — Automatic retries with exponential backoff
+### 🏠 People Search
+| Site | Status |
+|------|--------|
+| Whitepages | ✅ |
+| TruePeopleSearch | ✅ |
+| FastPeopleSearch | ✅ |
+| ThatsThem | ✅ |
+| USPhoneBook | ✅ |
 
-### 🔧 OSINT Integration
-- 🔎 **Sherlock** — Find usernames across 400+ social networks
-- 🐦 **Blackbird** — Search emails across platforms
-- 📱 **email2phonenumber** — Reverse lookup emails to phones
+</td>
+</tr>
+</table>
 
----
+<img src="https://capsule-render.vercel.app/api?type=rect&color=0:00d4ff,100:7c3aed&height=1" width="100%"/>
 
-## 📦 Installation
+## 📊 What It Extracts
 
-### Quick Start 🚀
-
-```bash
-# Clone the repo
-git clone https://github.com/thumpersecure/telespotter.git
-cd telespotter
-
-# Build optimized release
-cargo build --release
-
-# Run it!
-./target/release/telespotter --help
+```
+📛 Names         → People associated with the number
+📍 Locations     → Cities, states (incl. DC), ZIP codes
+📧 Emails        → Associated email addresses
+👤 Usernames     → Social media handles (@mentions)
+🔗 Social URLs   → Profile links from major platforms
 ```
 
-### Install System-Wide 🌍
+<img src="https://capsule-render.vercel.app/api?type=rect&color=0:00d4ff,100:7c3aed&height=1" width="100%"/>
+
+## 🚀 Usage Examples
 
 ```bash
-cargo install --path .
-telespotter --help
-```
-
-### Prerequisites 📋
-
-- 🦀 **Rust 1.70+** — Install from [rustup.rs](https://rustup.rs/)
-
-```bash
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-```
-
----
-
-## 🚀 Usage
-
-### Basic Search
-
-```bash
-# Interactive mode (prompts for number)
-telespotter
-
-# Direct number input
-telespotter 5551234567
-telespotter "(555) 123-4567"
-telespotter 1-555-123-4567
-```
-
-### 🎯 Quick Examples
-
-```bash
-# 🔥 Full OSINT scan with everything enabled
+# Full OSINT scan
 telespotter 5551234567 -p --random-ua -c -s
 
-# 🔍 Search with people lookup sites
-telespotter 5551234567 -p
-
-# 🎭 Use random user agents to avoid detection
-telespotter 5551234567 --random-ua
-
-# ⚡ Fast concurrent mode
-telespotter 5551234567 -c
-
-# 💾 Auto-save results to JSON
-telespotter 5551234567 -s
-
-# 🐛 Debug mode for troubleshooting
-telespotter 5551234567 -d
-```
-
-### 🏠 People Search Options
-
-```bash
-# Search ALL people lookup sites
-telespotter 5551234567 -p
-
-# Search specific sites only
-telespotter 5551234567 -p --whitepages
-telespotter 5551234567 -p --truepeoplesearch
-telespotter 5551234567 -p --fastpeoplesearch
-telespotter 5551234567 -p --thatsthem
-telespotter 5551234567 -p --usphonebook
-
-# Combine multiple sites
+# Search specific people sites
 telespotter 5551234567 -p --whitepages --thatsthem
-```
 
-### 🔎 OSINT Tool Integration
-
-```bash
-# Auto-run Sherlock on found usernames
+# Auto-run Sherlock on usernames found
 telespotter 5551234567 --sherlock
 
-# Auto-run Blackbird on found emails
-telespotter 5551234567 --blackbird
+# Quiet mode for scripts
+telespotter 5551234567 -q --no-osint-prompts -s
 
-# Run email2phonenumber reverse lookup
-telespotter 5551234567 --email2phone
-
-# Skip OSINT prompts (for scripting)
-telespotter 5551234567 --no-osint-prompts
+# Custom output limits
+telespotter 5551234567 --max-names 20 --max-emails 15
 ```
 
-### 🛠️ Advanced Options
+<img src="https://capsule-render.vercel.app/api?type=rect&color=0:00d4ff,100:7c3aed&height=1" width="100%"/>
 
-```bash
-# Custom number of results per engine (default: 5)
-telespotter 5551234567 -n 10
-
-# Adjust timeout (seconds)
-telespotter 5551234567 -t 30
-
-# Custom delay between requests (seconds)
-telespotter 5551234567 --delay 2
-
-# Select specific search engines
-telespotter 5551234567 -e google
-telespotter 5551234567 -e google -e bing
-
-# Output formats
-telespotter 5551234567 -s -f json    # JSON (default)
-telespotter 5551234567 -s -f csv     # CSV format
-telespotter 5551234567 -s -f txt     # Plain text
-
-# Custom output file
-telespotter 5551234567 -s -o results.json
-
-# Limit analysis display
-telespotter 5551234567 --max-names 5 --max-locations 5
-
-# Quiet mode (minimal output)
-telespotter 5551234567 -q
-
-# No colors (for piping/logging)
-telespotter 5551234567 --no-color
-```
-
----
-
-## 📋 All Command-Line Options
+## 📋 CLI Reference
 
 ```
-USAGE:
-    telespotter [OPTIONS] [PHONE_NUMBER]
+USAGE: telespotter [OPTIONS] [PHONE_NUMBER]
 
-ARGUMENTS:
-    [PHONE_NUMBER]    Phone number (digits only or formatted)
+CORE OPTIONS:
+  -p, --people-search         Search people lookup sites
+  -c, --concurrent            Fast parallel searches
+  -s, --save                  Auto-save results
+  -d, --debug                 Debug mode
+  -q, --quiet                 Minimal output
 
-OPTIONS:
-    -d, --debug                 🐛 Enable debug mode
-    -n, --num-results <NUM>     🔢 Results per search engine [default: 5]
-    -s, --save                  💾 Auto-save results to file
-    -t, --timeout <SECS>        ⏱️  HTTP timeout in seconds [default: 10]
-        --delay <SECS>          ⏳ Delay between requests [default: 1]
-    -o, --output <FILE>         📁 Custom output file path
-    -f, --format <FMT>          📄 Output format: json, csv, txt [default: json]
-    -e, --engines <ENGINE>      🔍 Engines: google, bing, duckduckgo, all
-    -q, --quiet                 🤫 Quiet mode (minimal output)
-        --no-color              🎨 Disable colored output
-        --max-names <NUM>       📛 Max names to display [default: 10]
-        --max-locations <NUM>   📍 Max locations to display [default: 10]
-        --max-emails <NUM>      📧 Max emails to display [default: 10]
-        --max-usernames <NUM>   👤 Max usernames to display [default: 10]
-    -c, --concurrent            ⚡ Concurrent searches (faster)
-        --retries <NUM>         🔄 Retry attempts [default: 2]
-        --random-ua             🎭 Random user agent rotation
-    -p, --people-search         🏠 Search people lookup sites
-        --whitepages            📖 Search Whitepages
-        --truepeoplesearch      👥 Search TruePeopleSearch
-        --fastpeoplesearch      ⚡ Search FastPeopleSearch
-        --thatsthem             🎯 Search ThatsThem
-        --usphonebook           📱 Search USPhoneBook
-        --sherlock              🔎 Auto-run Sherlock on usernames
-        --blackbird             🐦 Auto-run Blackbird on emails
-        --email2phone           📱 Run email2phonenumber lookup
-        --no-osint-prompts      🚫 Skip OSINT tool prompts
-    -h, --help                  ❓ Print help
-    -V, --version               📌 Print version
+SEARCH TUNING:
+  -n, --num-results <N>       Results per engine [default: 5]
+  -t, --timeout <SECS>        HTTP timeout [default: 10]
+      --delay <SECS>          Rate limit delay [default: 1]
+      --retries <N>           Retry attempts [default: 2]
+      --random-ua             Random user agent rotation
+  -e, --engines <ENGINE>      google, bing, duckduckgo, all
+
+OUTPUT OPTIONS:
+  -o, --output <FILE>         Custom output path
+  -f, --format <FMT>          json, csv, txt [default: json]
+      --no-color              Disable colors
+      --max-names <N>         Name limit [default: 10]
+      --max-locations <N>     Location limit [default: 10]
+      --max-emails <N>        Email limit [default: 10]
+      --max-usernames <N>     Username limit [default: 10]
+
+PEOPLE SEARCH SITES:
+      --whitepages            Whitepages only
+      --truepeoplesearch      TruePeopleSearch only
+      --fastpeoplesearch      FastPeopleSearch only
+      --thatsthem             ThatsThem only
+      --usphonebook           USPhoneBook only
+
+OSINT TOOLS:
+      --sherlock              Run Sherlock on usernames
+      --blackbird             Run Blackbird on emails
+      --email2phone           Run email2phonenumber
+      --no-osint-prompts      Skip tool prompts
 ```
 
----
-
-## 📊 Sample Output
-
-```
-================================================================================
-PATTERN ANALYSIS SUMMARY
-================================================================================
-
-Total Results Found: 47
-
-Results by Source:
-  • Google: 15 results
-  • Bing: 12 results
-  • DuckDuckGo: 8 results
-  • Whitepages: 4 results
-  • TruePeopleSearch: 5 results
-  • ThatsThem: 3 results
-
-📛 Names Found:
-  • John Smith: mentioned 8 time(s)
-  • Jane Doe: mentioned 3 time(s)
-  • Michael Johnson: mentioned 2 time(s)
-
-📍 Locations Mentioned:
-  • Philadelphia, PA: 12 occurrence(s)
-  • PA: 8 occurrence(s)
-  • 19102: 3 occurrence(s)
-
-📧 Emails Found:
-  • jsmith@email.com: 2 occurrence(s)
-  • contact@business.com: 1 occurrence(s)
-
-👤 Usernames/Social Media Found:
-  • @johnsmith: 3 occurrence(s)
-  • @jsmith2024: 1 occurrence(s)
-
-🔍 Key Insights:
-  • Most associated name: John Smith
-  • Most associated location: Philadelphia, PA
-================================================================================
-```
-
----
-
-## 🎯 Use Cases
-
-| Use Case | Command Example |
-|----------|-----------------|
-| 🕵️ **Full OSINT Investigation** | `telespotter 5551234567 -p --random-ua -c -s --sherlock` |
-| 🚫 **Spam Number Check** | `telespotter 5551234567 -p -s` |
-| ✅ **Business Verification** | `telespotter 5551234567 -p --whitepages` |
-| 🔎 **Skip Tracing** | `telespotter 5551234567 -p -n 10 --max-names 20` |
-| ⚖️ **Legal Investigation** | `telespotter 5551234567 -p -s -f txt -o evidence.txt` |
-| 🤖 **Automated/Scripted** | `telespotter 5551234567 -q --no-osint-prompts -s` |
-
----
+<img src="https://capsule-render.vercel.app/api?type=rect&color=0:00d4ff,100:7c3aed&height=1" width="100%"/>
 
 ## ⚡ Performance
 
-### Rust vs Python Comparison
+| Metric | Python | Rust | Gain |
+|--------|--------|------|------|
+| Execution | 65s | 18s | **3.6x** |
+| Memory | 48MB | 8MB | **6x** |
+| Startup | 800ms | 2ms | **400x** |
+| Binary | Interpreter | 4.2MB | Single file |
 
-| Metric | Python | Rust | Improvement |
-|--------|--------|------|-------------|
-| ⏱️ Execution | 65s | 18s | **3.6x faster** |
-| 💾 Memory | 48MB | 8MB | **6x less** |
-| 📦 Binary | Needs Python | 4.2MB | **Single file** |
-| 🚀 Startup | 800ms | 2ms | **400x faster** |
+<img src="https://capsule-render.vercel.app/api?type=rect&color=0:00d4ff,100:7c3aed&height=1" width="100%"/>
 
----
+## 🛠️ Installation
 
-## 🔧 Development
+### From Source
+```bash
+# Prerequisites: Rust 1.70+
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
-### Project Structure
+# Build
+git clone https://github.com/thumpersecure/telespotter.git
+cd telespotter
+cargo build --release
+
+# Install system-wide (optional)
+cargo install --path .
+```
+
+### Optional OSINT Tools
+```bash
+pip install sherlock-project    # Username search
+pip install blackbird           # Email search
+pip install email2phonenumber   # Reverse lookup
+```
+
+<img src="https://capsule-render.vercel.app/api?type=rect&color=0:00d4ff,100:7c3aed&height=1" width="100%"/>
+
+## 📁 Project Structure
 
 ```
 telespotter/
-├── 📄 Cargo.toml           # Dependencies
-├── 📄 main.rs              # Entry point & CLI
-├── 📄 phone.rs             # Phone formatting
-├── 📄 search.rs            # HTTP client & config
-├── 📄 google.rs            # Google scraper
-├── 📄 bing.rs              # Bing scraper
-├── 📄 duckduckgo.rs        # DuckDuckGo scraper
-├── 📄 whitepages.rs        # Whitepages scraper
-├── 📄 truepeoplesearch.rs  # TruePeopleSearch scraper
-├── 📄 fastpeoplesearch.rs  # FastPeopleSearch scraper
-├── 📄 thatsthem.rs         # ThatsThem scraper
-├── 📄 usphonebook.rs       # USPhoneBook scraper
-├── 📄 parser.rs            # Pattern extraction
-├── 📄 analysis.rs          # Results analysis
-└── 📄 README.md
+├── main.rs              # CLI & orchestration
+├── search.rs            # HTTP client, user agents
+├── phone.rs             # Phone formatting
+├── parser.rs            # Pattern extraction (names, emails, etc.)
+├── analysis.rs          # Results analysis
+├── google.rs            # Google scraper
+├── bing.rs              # Bing scraper
+├── duckduckgo.rs        # DuckDuckGo scraper
+├── whitepages.rs        # Whitepages scraper
+├── truepeoplesearch.rs  # TruePeopleSearch scraper
+├── fastpeoplesearch.rs  # FastPeopleSearch scraper
+├── thatsthem.rs         # ThatsThem scraper
+└── usphonebook.rs       # USPhoneBook scraper
 ```
 
-### Building & Testing
+<img src="https://capsule-render.vercel.app/api?type=rect&color=0:00d4ff,100:7c3aed&height=1" width="100%"/>
 
-```bash
-# 🔨 Build debug version
-cargo build
+## 🔒 Legal Notice
 
-# 🚀 Build optimized release
-cargo build --release
+> **For legitimate investigative purposes only.**
 
-# 🧪 Run tests
-cargo test
+- ✅ Uses publicly available data
+- ✅ Respect privacy laws
+- ❌ No harassment or stalking
+- ❌ No ToS violations
 
-# 📝 Format code
-cargo fmt
-
-# 🔍 Lint code
-cargo clippy
-```
-
----
-
-## 🛡️ Optional OSINT Tools
-
-For enhanced functionality, install these tools:
-
-### Sherlock 🔎
-```bash
-pip install sherlock-project
-```
-
-### Blackbird 🐦
-```bash
-pip install blackbird
-```
-
-### email2phonenumber 📱
-```bash
-pip install email2phonenumber
-```
-
----
-
-## 🔒 Privacy & Legal
-
-> ⚠️ **Important**: This tool is for **legitimate investigative purposes only**.
-
-- ✅ Uses publicly available search data
-- ✅ Respect privacy laws and regulations
-- ✅ Obtain proper authorization when required
-- ❌ Do not use for harassment or stalking
-- ❌ Do not violate terms of service
-
----
+<img src="https://capsule-render.vercel.app/api?type=rect&color=0:00d4ff,100:7c3aed&height=1" width="100%"/>
 
 ## 🆘 Troubleshooting
 
-### Common Issues
+| Issue | Solution |
+|-------|----------|
+| 0 results | Use `-d` debug, check connection |
+| Timeouts | Increase `-t 30` |
+| Rate limited | Use `--delay 3 --random-ua` |
+| Build errors | `rustup update && cargo clean` |
 
-| Problem | Solution |
-|---------|----------|
-| 🔴 0 results | Try `-d` debug mode, check internet, wait 10-15 min |
-| 🔴 Timeout errors | Increase with `-t 30`, check firewall |
-| 🔴 Rate limited | Use `--delay 3` and `--random-ua` |
-| 🔴 Build errors | Run `rustup update` and `cargo clean` |
-
-### Getting Help
-
-```bash
-# Show all options
-telespotter --help
-
-# Debug mode for errors
-telespotter -d 5551234567
-```
-
----
-
-## 📦 Dependencies
-
-| Crate | Purpose |
-|-------|---------|
-| `tokio` | ⚡ Async runtime |
-| `reqwest` | 🌐 HTTP client |
-| `scraper` | 📄 HTML parsing |
-| `clap` | 🖥️ CLI parsing |
-| `colored` | 🎨 Terminal colors |
-| `serde` | 📦 Serialization |
-| `regex` | 🔍 Pattern matching |
-| `rand` | 🎲 Random selection |
-
----
-
-## 👤 Author
-
-Created by **Spin Apin** ([@thumpersecure](https://github.com/thumpersecure))
-
----
-
-## 🤝 Contributing
-
-- 🐛 [Report bugs](https://github.com/thumpersecure/telespotter/issues)
-- 💡 Suggest features
-- 🔧 Submit pull requests
-- ⭐ Star if you find it useful!
-
----
-
-## 📄 License
-
-MIT License — see [LICENSE](LICENSE) for details.
-
----
+<img src="https://capsule-render.vercel.app/api?type=rect&color=0:00d4ff,100:7c3aed&height=1" width="100%"/>
 
 <div align="center">
 
-Made with 💻 and 🦀 for OSINT professionals
+**Created by [Spin Apin](https://github.com/thumpersecure)**
+
+[![GitHub](https://img.shields.io/badge/GitHub-thumpersecure-181717?style=for-the-badge&logo=github)](https://github.com/thumpersecure)
+
+<sub>Made with 🦀 Rust for OSINT professionals</sub>
 
 **⚡ Fast • 🔒 Safe • 🎯 Effective**
+
+<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=0,2,2,5,30&height=100&section=footer"/>
 
 </div>
