@@ -5,10 +5,10 @@ use std::collections::HashSet;
 lazy_static! {
     static ref NAME_PATTERN: Regex = Regex::new(r"\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,2})\b").unwrap();
     static ref STATE_PATTERN: Regex = Regex::new(
-        r"\b(AL|AK|AZ|AR|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY)\b"
+        r"\b(AL|AK|AZ|AR|CA|CO|CT|DC|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY)\b"
     ).unwrap();
     static ref CITY_STATE_PATTERN: Regex = Regex::new(
-        r"\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?),?\s+(AL|AK|AZ|AR|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY)\b"
+        r"\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?),?\s+(AL|AK|AZ|AR|CA|CO|CT|DC|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY)\b"
     ).unwrap();
     static ref ZIP_PATTERN: Regex = Regex::new(r"\b\d{5}(?:-\d{4})?\b").unwrap();
 
@@ -82,6 +82,7 @@ lazy_static! {
         ("CA", "California"),
         ("CO", "Colorado"),
         ("CT", "Connecticut"),
+        ("DC", "District of Columbia"),
         ("DE", "Delaware"),
         ("FL", "Florida"),
         ("GA", "Georgia"),

@@ -1,3 +1,4 @@
+use chrono::Utc;
 use clap::{Parser, ValueEnum};
 use colored::*;
 use std::collections::HashMap;
@@ -107,6 +108,14 @@ struct Args {
     /// Maximum number of locations to display in results
     #[arg(long, default_value = "10")]
     max_locations: usize,
+
+    /// Maximum number of emails to display in results
+    #[arg(long, default_value = "10")]
+    max_emails: usize,
+
+    /// Maximum number of usernames to display in results
+    #[arg(long, default_value = "10")]
+    max_usernames: usize,
 
     /// Enable concurrent searches across engines (faster but may trigger rate limits)
     #[arg(short = 'c', long)]
@@ -649,8 +658,9 @@ async fn main() -> anyhow::Result<()> {
 
         if args.debug && !format_results.is_empty() && !args.quiet {
             let sample = &format_results[0].title;
-            let truncated = if sample.len() > 60 {
-                format!("{}...", &sample[..60])
+            let truncated = if sample.chars().count() > 60 {
+                let end_idx = sample.char_indices().nth(60).map(|(i, _)| i).unwrap_or(sample.len());
+                format!("{}...", &sample[..end_idx])
             } else {
                 sample.clone()
             };
@@ -838,7 +848,7 @@ async fn main() -> anyhow::Result<()> {
         "Analyzing patterns across all results...".yellow(),
         "Analyzing patterns across all results...");
     let analyzer = PatternAnalyzer::new();
-    let patterns = analyzer.analyze(&all_results, args.max_names, args.max_locations);
+    let patterns = analyzer.analyze(&all_results, args.max_names, args.max_locations, args.max_emails, args.max_usernames);
 
     // Print summary (unless quiet mode)
     if !args.quiet {
@@ -879,6 +889,8 @@ async fn main() -> anyhow::Result<()> {
         match args.format {
             OutputFormat::Json => {
                 let output = serde_json::json!({
+                    "version": env!("CARGO_PKG_VERSION"),
+                    "timestamp": Utc::now().to_rfc3339(),
                     "phone_number": phone_number,
                     "search_formats": formats,
                     "results": all_results,
@@ -890,10 +902,12 @@ async fn main() -> anyhow::Result<()> {
                 let mut csv_content = String::from("Source,Title,Snippet\n");
                 for results in all_results.values() {
                     for result in results {
-                        let title = result.title.replace('"', "\"\"");
-                        let snippet = result.snippet.replace('"', "\"\"");
+                        // Escape quotes by doubling them and escape newlines
+                        let title = result.title.replace('"', "\"\"").replace('\n', " ").replace('\r', "");
+                        let snippet = result.snippet.replace('"', "\"\"").replace('\n', " ").replace('\r', "");
+                        let source = result.source.replace('"', "\"\"");
                         csv_content.push_str(&format!("\"{}\",\"{}\",\"{}\"\n",
-                            result.source, title, snippet));
+                            source, title, snippet));
                     }
                 }
                 fs::write(&filename, csv_content)?;

@@ -228,7 +228,7 @@ impl PatternAnalyzer {
         PatternAnalyzer
     }
 
-    pub fn analyze(&self, all_results: &HashMap<String, Vec<SearchResult>>, max_names: usize, max_locations: usize) -> PatternAnalysis {
+    pub fn analyze(&self, all_results: &HashMap<String, Vec<SearchResult>>, max_names: usize, max_locations: usize, max_emails: usize, max_usernames: usize) -> PatternAnalysis {
         let mut all_text = Vec::new();
         let mut source_counts: HashMap<String, usize> = HashMap::new();
 
@@ -267,11 +267,11 @@ impl PatternAnalyzer {
 
         let mut emails: Vec<(String, usize)> = email_counts.into_iter().collect();
         emails.sort_by(|a, b| b.1.cmp(&a.1));
-        emails.truncate(10); // Max 10 emails
+        emails.truncate(max_emails);
 
         let mut usernames: Vec<(String, usize)> = username_counts.into_iter().collect();
         usernames.sort_by(|a, b| b.1.cmp(&a.1));
-        usernames.truncate(10); // Max 10 usernames
+        usernames.truncate(max_usernames);
 
         PatternAnalysis {
             total_results: all_text.len(),

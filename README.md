@@ -225,6 +225,8 @@ OPTIONS:
         --no-color              🎨 Disable colored output
         --max-names <NUM>       📛 Max names to display [default: 10]
         --max-locations <NUM>   📍 Max locations to display [default: 10]
+        --max-emails <NUM>      📧 Max emails to display [default: 10]
+        --max-usernames <NUM>   👤 Max usernames to display [default: 10]
     -c, --concurrent            ⚡ Concurrent searches (faster)
         --retries <NUM>         🔄 Retry attempts [default: 2]
         --random-ua             🎭 Random user agent rotation
