@@ -9,7 +9,7 @@ repository = "https://github.com/thumpersecure/telespotter"
 
 [[bin]]
 name = "telespotter"
-path = "src/main.rs"
+path = "main.rs"
 
 [dependencies]
 # Async runtime
