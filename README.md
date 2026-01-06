@@ -23,7 +23,7 @@
 [![Version](https://img.shields.io/badge/Version-2.1.0-7c3aed?style=for-the-badge)](https://github.com/thumpersecure/telespotter)
 [![Stars](https://img.shields.io/github/stars/thumpersecure/telespotter?style=for-the-badge&color=fbbf24)](https://github.com/thumpersecure/telespotter)
 
-**A blazingly fast phone number OSINT tool** — Search across multiple engines and people lookup sites to gather intelligence on any phone number.
+**A blazingly fast phone number OSINT tool** — Search across multiple engines and people lookup sites to gather intelligence on any US phone number.
 
 <img src="https://capsule-render.vercel.app/api?type=rect&color=gradient&customColorList=0,2,2,5,30&height=2&section=header" width="100%"/>
 
@@ -39,17 +39,38 @@ cargo build --release
 
 <img src="https://capsule-render.vercel.app/api?type=rect&color=0:00d4ff,100:7c3aed&height=1" width="100%"/>
 
-## 🌟 What's New in v2.1
+## 🌟 Features Overview
 
-| Feature | Description |
-|---------|-------------|
-| 🎭 **Random User Agent** | 15 browser signatures to avoid detection |
-| 🏠 **People Search** | Whitepages, TruePeopleSearch, FastPeopleSearch, ThatsThem, USPhoneBook |
-| 📧 **Email Extraction** | Auto-find associated email addresses |
-| 👤 **Username Detection** | Find social media handles |
-| 🔗 **OSINT Integration** | Sherlock, Blackbird & email2phonenumber |
-| 📍 **DC Support** | District of Columbia now recognized |
-| 📊 **JSON Metadata** | Version & timestamp in output files |
+### 🔍 Smart Search Technology
+- **Quoted exact-match searches** — All queries use `"xxx-xxx-xxxx"` format for precise results
+- **4 phone format variations** — Searches multiple formats simultaneously:
+  - `555-123-4567` (dashed)
+  - `(555) 123-4567` (parenthesized)
+  - `5551234567` (continuous)
+  - `1 555-123-4567` (with country code)
+- **Google API support** — Uses official API when `GOOGLE_API_KEY` and `GOOGLE_SEARCH_ENGINE_ID` env vars are set
+- **Fallback web scraping** — Automatically scrapes when API unavailable
+
+### 🎭 Anti-Detection
+- **15 rotating user agents** — Chrome, Firefox, Safari, Edge on Windows/macOS/Linux
+- **Configurable rate limiting** — Adjustable delays between requests
+- **Exponential backoff retries** — Automatic retry with increasing delays
+
+### 📊 Pattern Analysis Engine
+| Data Type | Extraction Details |
+|-----------|-------------------|
+| 📛 **Names** | 2-3 word capitalized names with smart filtering |
+| 📍 **Locations** | All 50 US states + DC, city-state combos, ZIP codes |
+| 📧 **Emails** | Filtered for false positives (excludes example.com, noreply@, etc.) |
+| 👤 **Usernames** | @mentions and social profile URLs |
+| 🔗 **Social URLs** | Facebook, Twitter/X, Instagram, LinkedIn, TikTok, Snapchat, YouTube, Pinterest |
+
+### 🔧 OSINT Tool Integration
+| Tool | Purpose | Command |
+|------|---------|---------|
+| 🔎 **Sherlock** | Username search across 400+ sites | `--sherlock` |
+| 🐦 **Blackbird** | Email account discovery | `--blackbird` |
+| 📱 **email2phonenumber** | Reverse email-to-phone lookup | `--email2phone` |
 
 <img src="https://capsule-render.vercel.app/api?type=rect&color=0:00d4ff,100:7c3aed&height=1" width="100%"/>
 
@@ -60,23 +81,23 @@ cargo build --release
 <td width="50%">
 
 ### 🌐 Search Engines
-| Engine | Status |
+| Engine | Method |
 |--------|--------|
-| Google | ✅ |
-| Bing | ✅ |
-| DuckDuckGo | ✅ |
+| Google | API or Scraping |
+| Bing | Web Scraping |
+| DuckDuckGo | Web Scraping |
 
 </td>
 <td width="50%">
 
-### 🏠 People Search
-| Site | Status |
-|------|--------|
-| Whitepages | ✅ |
-| TruePeopleSearch | ✅ |
-| FastPeopleSearch | ✅ |
-| ThatsThem | ✅ |
-| USPhoneBook | ✅ |
+### 🏠 People Search Sites
+| Site | Data |
+|------|------|
+| Whitepages | Names, addresses |
+| TruePeopleSearch | Owner, relatives |
+| FastPeopleSearch | Quick lookups |
+| ThatsThem | Comprehensive |
+| USPhoneBook | Carrier info |
 
 </td>
 </tr>
@@ -84,91 +105,133 @@ cargo build --release
 
 <img src="https://capsule-render.vercel.app/api?type=rect&color=0:00d4ff,100:7c3aed&height=1" width="100%"/>
 
-## 📊 What It Extracts
+## 🚀 Usage
 
-```
-📛 Names         → People associated with the number
-📍 Locations     → Cities, states (incl. DC), ZIP codes
-📧 Emails        → Associated email addresses
-👤 Usernames     → Social media handles (@mentions)
-🔗 Social URLs   → Profile links from major platforms
+### Interactive Mode
+```bash
+# Prompts for phone number, save options, and OSINT tools
+telespotter
 ```
 
-<img src="https://capsule-render.vercel.app/api?type=rect&color=0:00d4ff,100:7c3aed&height=1" width="100%"/>
+### Direct Input
+```bash
+# Accepts multiple input formats
+telespotter 5551234567
+telespotter "(555) 123-4567"
+telespotter 1-555-123-4567
+telespotter 15551234567
+```
 
-## 🚀 Usage Examples
+### Common Workflows
 
 ```bash
-# Full OSINT scan
-telespotter 5551234567 -p --random-ua -c -s
+# Full OSINT scan with all features
+telespotter 5551234567 -p --random-ua -c -s --sherlock --blackbird
 
-# Search specific people sites
+# Quick people search only
+telespotter 5551234567 -p
+
+# Automated scripting (no prompts)
+telespotter 5551234567 -q --no-osint-prompts -s -f json
+
+# Specific search engines only
+telespotter 5551234567 -e google -e bing
+
+# Specific people sites only
 telespotter 5551234567 -p --whitepages --thatsthem
 
-# Auto-run Sherlock on usernames found
-telespotter 5551234567 --sherlock
-
-# Quiet mode for scripts
-telespotter 5551234567 -q --no-osint-prompts -s
-
-# Custom output limits
-telespotter 5551234567 --max-names 20 --max-emails 15
+# High-volume with rate limiting
+telespotter 5551234567 --delay 3 --random-ua --retries 3
 ```
 
 <img src="https://capsule-render.vercel.app/api?type=rect&color=0:00d4ff,100:7c3aed&height=1" width="100%"/>
 
-## 📋 CLI Reference
+## 📋 Complete CLI Reference
 
 ```
 USAGE: telespotter [OPTIONS] [PHONE_NUMBER]
 
-CORE OPTIONS:
-  -p, --people-search         Search people lookup sites
-  -c, --concurrent            Fast parallel searches
-  -s, --save                  Auto-save results
-  -d, --debug                 Debug mode
-  -q, --quiet                 Minimal output
+ARGUMENTS:
+  [PHONE_NUMBER]              10 or 11 digit US phone number (any format)
 
-SEARCH TUNING:
+CORE OPTIONS:
+  -d, --debug                 Show errors and sample results
+  -q, --quiet                 Minimal output (for scripting)
+  -s, --save                  Auto-save results to file
+  -c, --concurrent            Parallel engine searches (faster)
+  -p, --people-search         Search people lookup sites
+
+SEARCH CONFIGURATION:
   -n, --num-results <N>       Results per engine [default: 5]
-  -t, --timeout <SECS>        HTTP timeout [default: 10]
-      --delay <SECS>          Rate limit delay [default: 1]
-      --retries <N>           Retry attempts [default: 2]
-      --random-ua             Random user agent rotation
-  -e, --engines <ENGINE>      google, bing, duckduckgo, all
+  -e, --engines <ENGINE>      google, bing, duckduckgo, all [default: all]
+  -t, --timeout <SECS>        HTTP request timeout [default: 10]
+      --delay <SECS>          Delay between requests [default: 1]
+      --retries <N>           Retry attempts on failure [default: 2]
+      --random-ua             Rotate through 15 user agents
 
 OUTPUT OPTIONS:
-  -o, --output <FILE>         Custom output path
+  -o, --output <FILE>         Custom output file path
   -f, --format <FMT>          json, csv, txt [default: json]
-      --no-color              Disable colors
-      --max-names <N>         Name limit [default: 10]
-      --max-locations <N>     Location limit [default: 10]
-      --max-emails <N>        Email limit [default: 10]
-      --max-usernames <N>     Username limit [default: 10]
+      --no-color              Disable colored terminal output
+      --max-names <N>         Max names to show [default: 10]
+      --max-locations <N>     Max locations to show [default: 10]
+      --max-emails <N>        Max emails to show [default: 10]
+      --max-usernames <N>     Max usernames to show [default: 10]
 
-PEOPLE SEARCH SITES:
+PEOPLE SEARCH SITES (use with -p):
       --whitepages            Whitepages only
       --truepeoplesearch      TruePeopleSearch only
       --fastpeoplesearch      FastPeopleSearch only
       --thatsthem             ThatsThem only
       --usphonebook           USPhoneBook only
 
-OSINT TOOLS:
-      --sherlock              Run Sherlock on usernames
-      --blackbird             Run Blackbird on emails
-      --email2phone           Run email2phonenumber
-      --no-osint-prompts      Skip tool prompts
+OSINT TOOL INTEGRATION:
+      --sherlock              Auto-run Sherlock on found usernames
+      --blackbird             Auto-run Blackbird on found emails
+      --email2phone           Auto-run email2phonenumber
+      --no-osint-prompts      Skip all OSINT tool prompts
+
+HELP:
+  -h, --help                  Print help
+  -V, --version               Print version
 ```
+
+<img src="https://capsule-render.vercel.app/api?type=rect&color=0:00d4ff,100:7c3aed&height=1" width="100%"/>
+
+## 📁 Output Formats
+
+### JSON (default)
+Includes version, timestamp, all results, and pattern analysis:
+```json
+{
+  "version": "2.1.0",
+  "timestamp": "2024-01-15T10:30:00Z",
+  "phone_number": "5551234567",
+  "search_formats": ["555-123-4567", "(555) 123-4567", ...],
+  "results": { ... },
+  "pattern_analysis": { ... }
+}
+```
+
+### CSV
+Properly escaped with quote handling and newline sanitization:
+```
+Source,Title,Snippet
+"Google","John Smith - Phone","Located in Philadelphia, PA..."
+```
+
+### TXT
+Human-readable report with sections for names, locations, emails, usernames.
 
 <img src="https://capsule-render.vercel.app/api?type=rect&color=0:00d4ff,100:7c3aed&height=1" width="100%"/>
 
 ## ⚡ Performance
 
-| Metric | Python | Rust | Gain |
-|--------|--------|------|------|
-| Execution | 65s | 18s | **3.6x** |
-| Memory | 48MB | 8MB | **6x** |
-| Startup | 800ms | 2ms | **400x** |
+| Metric | Python | Rust | Improvement |
+|--------|--------|------|-------------|
+| Execution | 65s | 18s | **3.6x faster** |
+| Memory | 48MB | 8MB | **6x less** |
+| Startup | 800ms | 2ms | **400x faster** |
 | Binary | Interpreter | 4.2MB | Single file |
 
 <img src="https://capsule-render.vercel.app/api?type=rect&color=0:00d4ff,100:7c3aed&height=1" width="100%"/>
@@ -189,6 +252,13 @@ cargo build --release
 cargo install --path .
 ```
 
+### Environment Variables (Optional)
+```bash
+# For Google Custom Search API (higher rate limits)
+export GOOGLE_API_KEY="your-api-key"
+export GOOGLE_SEARCH_ENGINE_ID="your-cx-id"
+```
+
 ### Optional OSINT Tools
 ```bash
 pip install sherlock-project    # Username search
@@ -202,12 +272,12 @@ pip install email2phonenumber   # Reverse lookup
 
 ```
 telespotter/
-├── main.rs              # CLI & orchestration
-├── search.rs            # HTTP client, user agents
-├── phone.rs             # Phone formatting
-├── parser.rs            # Pattern extraction (names, emails, etc.)
-├── analysis.rs          # Results analysis
-├── google.rs            # Google scraper
+├── main.rs              # CLI, orchestration, OSINT integration
+├── phone.rs             # Phone number parsing & format generation
+├── search.rs            # HTTP client, 15 user agents, SearchConfig
+├── parser.rs            # Regex patterns for names, locations, emails, usernames
+├── analysis.rs          # Pattern counting & result aggregation
+├── google.rs            # Google API + scraping (quoted searches)
 ├── bing.rs              # Bing scraper
 ├── duckduckgo.rs        # DuckDuckGo scraper
 ├── whitepages.rs        # Whitepages scraper
@@ -219,25 +289,44 @@ telespotter/
 
 <img src="https://capsule-render.vercel.app/api?type=rect&color=0:00d4ff,100:7c3aed&height=1" width="100%"/>
 
-## 🔒 Legal Notice
-
-> **For legitimate investigative purposes only.**
-
-- ✅ Uses publicly available data
-- ✅ Respect privacy laws
-- ❌ No harassment or stalking
-- ❌ No ToS violations
-
-<img src="https://capsule-render.vercel.app/api?type=rect&color=0:00d4ff,100:7c3aed&height=1" width="100%"/>
-
 ## 🆘 Troubleshooting
 
 | Issue | Solution |
 |-------|----------|
-| 0 results | Use `-d` debug, check connection |
-| Timeouts | Increase `-t 30` |
-| Rate limited | Use `--delay 3 --random-ua` |
-| Build errors | `rustup update && cargo clean` |
+| 0 results | Use `-d` to see errors; try `--random-ua`; wait 10-15 min if rate limited |
+| Timeouts | Increase with `-t 30`; check firewall/proxy settings |
+| Rate limited | Use `--delay 3 --random-ua`; set Google API keys for higher limits |
+| Build errors | Run `rustup update && cargo clean && cargo build --release` |
+| UTF-8 errors | Fixed in v2.1 - update to latest version |
+
+<img src="https://capsule-render.vercel.app/api?type=rect&color=0:00d4ff,100:7c3aed&height=1" width="100%"/>
+
+## 🔒 Legal Notice
+
+> **For legitimate investigative purposes only.**
+
+- ✅ Uses publicly available search data
+- ✅ Respects rate limits with configurable delays
+- ❌ Do not use for harassment or stalking
+- ❌ Do not violate terms of service
+- ❌ Verify compliance with local laws
+
+<img src="https://capsule-render.vercel.app/api?type=rect&color=0:00d4ff,100:7c3aed&height=1" width="100%"/>
+
+## 📦 Dependencies
+
+| Crate | Purpose |
+|-------|---------|
+| `tokio` | Async runtime |
+| `reqwest` | HTTP client |
+| `scraper` | HTML parsing |
+| `clap` | CLI argument parsing |
+| `colored` | Terminal colors |
+| `serde` / `serde_json` | JSON serialization |
+| `regex` / `lazy_static` | Pattern matching |
+| `rand` | User agent rotation |
+| `chrono` | Timestamps |
+| `anyhow` | Error handling |
 
 <img src="https://capsule-render.vercel.app/api?type=rect&color=0:00d4ff,100:7c3aed&height=1" width="100%"/>
 
