@@ -1,9 +1,16 @@
-use crate::search::{create_client, SearchResult};
+use crate::search::{create_client_from_config, SearchConfig, SearchResult};
 use anyhow::Result;
 use scraper::{Html, Selector};
 
+/// Search Bing with default configuration
+#[allow(dead_code)]
 pub async fn search(query: &str, num_results: usize) -> Result<Vec<SearchResult>> {
-    let client = create_client();
+    search_with_config(query, num_results, &SearchConfig::default()).await
+}
+
+/// Search Bing with custom configuration
+pub async fn search_with_config(query: &str, num_results: usize, config: &SearchConfig) -> Result<Vec<SearchResult>> {
+    let client = create_client_from_config(config);
     let encoded_query = urlencoding::encode(query);
     let url = format!(
         "https://www.bing.com/search?q={}&count={}",
@@ -13,7 +20,7 @@ pub async fn search(query: &str, num_results: usize) -> Result<Vec<SearchResult>
     let response = client.get(&url).send().await?;
 
     if !response.status().is_success() {
-        return Ok(Vec::new());
+        return Err(anyhow::anyhow!("Bing search error: {}", response.status()));
     }
 
     let html = response.text().await?;

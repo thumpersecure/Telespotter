@@ -1,4 +1,4 @@
-use crate::search::{create_client, SearchResult};
+use crate::search::{create_client_from_config, SearchConfig, SearchResult};
 use anyhow::Result;
 use scraper::{Html, Selector};
 use serde::Deserialize;
@@ -17,7 +17,13 @@ struct GoogleSearchItem {
 
 /// Search using Google Custom Search API if credentials are available,
 /// otherwise fall back to web scraping
+#[allow(dead_code)]
 pub async fn search(query: &str, num_results: usize) -> Result<Vec<SearchResult>> {
+    search_with_config(query, num_results, &SearchConfig::default()).await
+}
+
+/// Search with custom configuration
+pub async fn search_with_config(query: &str, num_results: usize, config: &SearchConfig) -> Result<Vec<SearchResult>> {
     // Check for API credentials in environment variables
     let api_key = env::var("GOOGLE_API_KEY").ok();
     let search_engine_id = env::var("GOOGLE_SEARCH_ENGINE_ID").ok();
@@ -25,25 +31,37 @@ pub async fn search(query: &str, num_results: usize) -> Result<Vec<SearchResult>
     match (api_key, search_engine_id) {
         (Some(key), Some(cx)) => {
             // Use official API if credentials are available
-            search_with_api(query, num_results, &key, &cx).await
+            search_with_api_config(query, num_results, &key, &cx, config).await
         }
         _ => {
             // Fall back to web scraping
-            search_with_scraping(query, num_results).await
+            search_with_scraping_config(query, num_results, config).await
         }
     }
 }
 
 /// Search using Google Custom Search API
+#[allow(dead_code)]
 async fn search_with_api(
     query: &str,
     num_results: usize,
     api_key: &str,
     cx: &str,
 ) -> Result<Vec<SearchResult>> {
-    let client = create_client();
+    search_with_api_config(query, num_results, api_key, cx, &SearchConfig::default()).await
+}
+
+/// Search using Google Custom Search API with config
+async fn search_with_api_config(
+    query: &str,
+    num_results: usize,
+    api_key: &str,
+    cx: &str,
+    config: &SearchConfig,
+) -> Result<Vec<SearchResult>> {
+    let client = create_client_from_config(config);
     let encoded_query = urlencoding::encode(query);
-    
+
     // Google Custom Search API endpoint
     let url = format!(
         "https://www.googleapis.com/customsearch/v1?key={}&cx={}&q={}&num={}",
@@ -53,8 +71,7 @@ async fn search_with_api(
     let response = client.get(&url).send().await?;
 
     if !response.status().is_success() {
-        eprintln!("Google API error: {}", response.status());
-        return Ok(Vec::new());
+        return Err(anyhow::anyhow!("Google API error: {}", response.status()));
     }
 
     let api_response: GoogleApiResponse = response.json().await?;
@@ -76,8 +93,14 @@ async fn search_with_api(
 }
 
 /// Search using web scraping (fallback method)
+#[allow(dead_code)]
 async fn search_with_scraping(query: &str, num_results: usize) -> Result<Vec<SearchResult>> {
-    let client = create_client();
+    search_with_scraping_config(query, num_results, &SearchConfig::default()).await
+}
+
+/// Search using web scraping with config
+async fn search_with_scraping_config(query: &str, num_results: usize, config: &SearchConfig) -> Result<Vec<SearchResult>> {
+    let client = create_client_from_config(config);
     let encoded_query = urlencoding::encode(query);
     let url = format!(
         "https://www.google.com/search?q={}&num={}",
@@ -87,7 +110,7 @@ async fn search_with_scraping(query: &str, num_results: usize) -> Result<Vec<Sea
     let response = client.get(&url).send().await?;
 
     if !response.status().is_success() {
-        return Ok(Vec::new());
+        return Err(anyhow::anyhow!("Google scraping error: {}", response.status()));
     }
 
     let html = response.text().await?;

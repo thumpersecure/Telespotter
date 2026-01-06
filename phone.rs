@@ -1,5 +1,4 @@
 use anyhow::{anyhow, Result};
-use regex::Regex;
 
 pub struct PhoneFormatter {
     area: String,

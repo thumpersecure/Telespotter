@@ -1,16 +1,23 @@
-use crate::search::{create_client, SearchResult};
+use crate::search::{create_client_from_config, SearchConfig, SearchResult};
 use anyhow::Result;
 use scraper::{Html, Selector};
 
+/// Search DuckDuckGo with default configuration
+#[allow(dead_code)]
 pub async fn search(query: &str, num_results: usize) -> Result<Vec<SearchResult>> {
-    let client = create_client();
+    search_with_config(query, num_results, &SearchConfig::default()).await
+}
+
+/// Search DuckDuckGo with custom configuration
+pub async fn search_with_config(query: &str, num_results: usize, config: &SearchConfig) -> Result<Vec<SearchResult>> {
+    let client = create_client_from_config(config);
     let encoded_query = urlencoding::encode(query);
     let url = format!("https://html.duckduckgo.com/html/?q={}", encoded_query);
 
     let response = client.get(&url).send().await?;
 
     if !response.status().is_success() {
-        return Ok(Vec::new());
+        return Err(anyhow::anyhow!("DuckDuckGo search error: {}", response.status()));
     }
 
     let html = response.text().await?;

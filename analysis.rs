@@ -13,76 +13,144 @@ pub struct PatternAnalysis {
 }
 
 impl PatternAnalysis {
-    pub fn print_summary(&self) {
-        println!("\n{}", "=".repeat(80).magenta().bold());
-        println!("{}", "PATTERN ANALYSIS SUMMARY".magenta().bold());
-        println!("{}", "=".repeat(80).magenta().bold());
+    pub fn print_summary(&self, no_color: bool) {
+        let separator = "=".repeat(80);
+
+        if no_color {
+            println!("\n{}", separator);
+            println!("PATTERN ANALYSIS SUMMARY");
+            println!("{}", separator);
+        } else {
+            println!("\n{}", separator.magenta().bold());
+            println!("{}", "PATTERN ANALYSIS SUMMARY".magenta().bold());
+            println!("{}", separator.magenta().bold());
+        }
         println!();
 
-        println!(
-            "{} {}",
-            "Total Results Found:".cyan(),
-            self.total_results
-        );
+        if no_color {
+            println!("Total Results Found: {}", self.total_results);
+        } else {
+            println!(
+                "{} {}",
+                "Total Results Found:".cyan(),
+                self.total_results
+            );
+        }
         println!();
 
         // Source breakdown
         if !self.results_by_source.is_empty() {
-            println!("{}", "Results by Source:".blue().bold());
+            if no_color {
+                println!("Results by Source:");
+            } else {
+                println!("{}", "Results by Source:".blue().bold());
+            }
             for (source, count) in &self.results_by_source {
-                println!("  • {}: {} results", source.green(), count);
+                if no_color {
+                    println!("  - {}: {} results", source, count);
+                } else {
+                    println!("  • {}: {} results", source.green(), count);
+                }
             }
             println!();
         }
 
         // Name patterns
         if !self.common_names.is_empty() {
-            println!("{}", "📛 Names Found:".blue().bold());
+            if no_color {
+                println!("Names Found:");
+            } else {
+                println!("{}", "📛 Names Found:".blue().bold());
+            }
             for (name, count) in &self.common_names {
-                println!("  • {}: mentioned {} time(s)", name.green(), count);
+                if no_color {
+                    println!("  - {}: mentioned {} time(s)", name, count);
+                } else {
+                    println!("  • {}: mentioned {} time(s)", name.green(), count);
+                }
             }
             println!();
         } else {
-            println!("{}\n", "No names detected in search results".yellow());
+            if no_color {
+                println!("No names detected in search results\n");
+            } else {
+                println!("{}\n", "No names detected in search results".yellow());
+            }
         }
 
         // Location patterns
         if !self.common_locations.is_empty() {
-            println!("{}", "📍 Locations Mentioned:".blue().bold());
+            if no_color {
+                println!("Locations Mentioned:");
+            } else {
+                println!("{}", "📍 Locations Mentioned:".blue().bold());
+            }
             for (location, count) in &self.common_locations {
-                println!("  • {}: {} occurrence(s)", location.green(), count);
+                if no_color {
+                    println!("  - {}: {} occurrence(s)", location, count);
+                } else {
+                    println!("  • {}: {} occurrence(s)", location.green(), count);
+                }
             }
             println!();
         } else {
-            println!("{}\n", "No locations detected in search results".yellow());
+            if no_color {
+                println!("No locations detected in search results\n");
+            } else {
+                println!("{}\n", "No locations detected in search results".yellow());
+            }
         }
 
         // Key insights
-        println!("{}", "🔍 Key Insights:".blue().bold());
+        if no_color {
+            println!("Key Insights:");
+        } else {
+            println!("{}", "🔍 Key Insights:".blue().bold());
+        }
 
         if self.total_results == 0 {
-            println!(
-                "  • {}",
-                "No results found for this phone number".yellow()
-            );
+            if no_color {
+                println!("  - No results found for this phone number");
+            } else {
+                println!(
+                    "  • {}",
+                    "No results found for this phone number".yellow()
+                );
+            }
         } else {
             if let Some((name, _)) = self.common_names.first() {
-                println!("  • {}: {}", "Most associated name".green(), name);
+                if no_color {
+                    println!("  - Most associated name: {}", name);
+                } else {
+                    println!("  • {}: {}", "Most associated name".green(), name);
+                }
             }
 
             if let Some((location, _)) = self.common_locations.first() {
-                println!("  • {}: {}", "Most associated location".green(), location);
+                if no_color {
+                    println!("  - Most associated location: {}", location);
+                } else {
+                    println!("  • {}: {}", "Most associated location".green(), location);
+                }
             }
 
             if self.common_names.is_empty() && self.common_locations.is_empty() {
-                println!(
-                    "  • {}",
-                    "Found results but no clear name or location patterns".yellow()
-                );
+                if no_color {
+                    println!("  - Found results but no clear name or location patterns");
+                } else {
+                    println!(
+                        "  • {}",
+                        "Found results but no clear name or location patterns".yellow()
+                    );
+                }
             }
         }
 
-        println!("\n{}\n", "=".repeat(80).magenta().bold());
+        if no_color {
+            println!("\n{}\n", separator);
+        } else {
+            println!("\n{}\n", separator.magenta().bold());
+        }
     }
 
     pub fn to_json(&self) -> serde_json::Value {
@@ -102,7 +170,7 @@ impl PatternAnalyzer {
         PatternAnalyzer
     }
 
-    pub fn analyze(&self, all_results: &HashMap<String, Vec<SearchResult>>) -> PatternAnalysis {
+    pub fn analyze(&self, all_results: &HashMap<String, Vec<SearchResult>>, max_names: usize, max_locations: usize) -> PatternAnalysis {
         let mut all_text = Vec::new();
         let mut source_counts: HashMap<String, usize> = HashMap::new();
 
@@ -126,14 +194,14 @@ impl PatternAnalyzer {
         let name_counts = count_occurrences(&names);
         let location_counts = count_occurrences(&locations);
 
-        // Sort by frequency and take top 10
+        // Sort by frequency and take top N (configurable)
         let mut common_names: Vec<(String, usize)> = name_counts.into_iter().collect();
         common_names.sort_by(|a, b| b.1.cmp(&a.1));
-        common_names.truncate(10);
+        common_names.truncate(max_names);
 
         let mut common_locations: Vec<(String, usize)> = location_counts.into_iter().collect();
         common_locations.sort_by(|a, b| b.1.cmp(&a.1));
-        common_locations.truncate(10);
+        common_locations.truncate(max_locations);
 
         PatternAnalysis {
             total_results: all_text.len(),
