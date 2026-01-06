@@ -1,230 +1,283 @@
-# 📞 TeleSpotter 🔍 (Rust Edition)
+# 📞 TeleSpotter 🔍
 
 ```
-████████╗███████╗██╗     ███████╗███████╗██████╗  ██████╗ ████████╗████████╗███████╗██████╗ 
+████████╗███████╗██╗     ███████╗███████╗██████╗  ██████╗ ████████╗████████╗███████╗██████╗
 ╚══██╔══╝██╔════╝██║     ██╔════╝██╔════╝██╔══██╗██╔═══██╗╚══██╔══╝╚══██╔══╝██╔════╝██╔══██╗
    ██║   █████╗  ██║     █████╗  ███████╗██████╔╝██║   ██║   ██║      ██║   █████╗  ██████╔╝
    ██║   ██╔══╝  ██║     ██╔══╝  ╚════██║██╔═══╝ ██║   ██║   ██║      ██║   ██╔══╝  ██╔══██╗
    ██║   ███████╗███████╗███████╗███████║██║     ╚██████╔╝   ██║      ██║   ███████╗██║  ██║
    ╚═╝   ╚══════╝╚══════╝╚══════╝╚══════╝╚═╝      ╚═════╝    ╚═╝      ╚═╝   ╚══════╝╚═╝  ╚═╝
-                                                                              version 2.0
-                                                                              Rust Edition
+                                                                              version 2.1
 ```
 
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 [![Rust](https://img.shields.io/badge/Rust-1.70+-orange?logo=rust)](https://www.rust-lang.org/)
+[![Version](https://img.shields.io/badge/Version-2.1.0-blue)](https://github.com/thumpersecure/telespotter)
 
-A blazingly fast phone number OSINT search tool written in **Rust**. Searches **Google, Bing, and DuckDuckGo** for phone numbers using multiple format variations and identifies **names and locations** in the results.
+> 🚀 **A blazingly fast phone number OSINT tool written in Rust** — Search across multiple engines and people lookup sites to gather intelligence on any phone number.
+
+---
+
+## 🌟 What's New in v2.1
+
+- 🎭 **Random User Agent Rotation** — Avoid detection with 15 different browser signatures
+- 🔍 **People Search Sites** — Search Whitepages, TruePeopleSearch, FastPeopleSearch, ThatsThem & USPhoneBook
+- 📧 **Email Extraction** — Automatically find associated email addresses
+- 👤 **Username Detection** — Find social media handles from results
+- 🔗 **OSINT Tool Integration** — Auto-prompt for Sherlock, Blackbird & email2phonenumber
+
+---
 
 ## ✨ Features
 
-- **🚀 High Performance**: Written in Rust for maximum speed and efficiency
-- **Multi-Engine Search**: Searches Google, Bing, AND DuckDuckGo simultaneously
-- **Google API Support**: Optional Google Custom Search API integration (100 free searches/day)
-- **Multiple Format Searching**: Automatically generates 4 different phone number format variations
-- **Focused Pattern Analysis**: Identifies common patterns:
-  - 📛 **Associated names** (people mentioned with the number)
-  - 📍 **Geographic locations** (cities, states, zip codes)
-  - ✅ **Results by source** (which search engine found what)
-- **Rate Limiting**: Built-in delays between searches to avoid throttling
-- **Colored Terminal Output**: Easy-to-read results with color coding
-- **JSON Export**: Option to save detailed results for further analysis
-- **Memory Safe**: No segfaults, buffer overflows, or undefined behavior
-- **Single Binary**: Compiles to a single executable with no runtime dependencies
+### 🔎 Multi-Engine Search
+| Engine | Description |
+|--------|-------------|
+| 🔵 **Google** | Web scraping with retry logic |
+| 🟢 **Bing** | Microsoft search engine |
+| 🦆 **DuckDuckGo** | Privacy-focused search |
 
-## 🎯 Why Rust?
+### 🏠 People Search Sites
+| Site | What It Finds |
+|------|---------------|
+| 📖 **Whitepages** | Names, addresses, phone records |
+| 👥 **TruePeopleSearch** | Owner info, relatives, associates |
+| ⚡ **FastPeopleSearch** | Quick lookups with age info |
+| 🎯 **ThatsThem** | Comprehensive people data |
+| 📱 **USPhoneBook** | Phone carrier & owner details |
 
-The Rust version offers several advantages over the Python version:
+### 📊 Pattern Analysis
+- 📛 **Names** — People associated with the number
+- 📍 **Locations** — Cities, states, ZIP codes
+- 📧 **Emails** — Associated email addresses
+- 👤 **Usernames** — Social media handles (@mentions)
+- 🔗 **Social Profiles** — Extracted from URLs
 
-- ⚡ **3-5x faster** execution
-- 💾 **Lower memory usage** (~10MB vs ~50MB)
-- 📦 **Single binary** - no Python interpreter or dependencies needed
-- 🔒 **Memory safety** - no crashes or memory leaks
-- 🏗️ **Better concurrency** - true async/await with Tokio
-- 📊 **Type safety** - catch bugs at compile time
+### 🛡️ Anti-Detection
+- 🎭 **15 User Agents** — Chrome, Firefox, Safari, Edge on Windows/macOS/Linux
+- ⏱️ **Rate Limiting** — Configurable delays between requests
+- 🔄 **Retry Logic** — Automatic retries with exponential backoff
 
-## 📋 Prerequisites
+### 🔧 OSINT Integration
+- 🔎 **Sherlock** — Find usernames across 400+ social networks
+- 🐦 **Blackbird** — Search emails across platforms
+- 📱 **email2phonenumber** — Reverse lookup emails to phones
 
-1. **Rust 1.70+** 🦀
-   - Install from [rustup.rs](https://rustup.rs/)
+---
+
+## 📦 Installation
+
+### Quick Start 🚀
+
+```bash
+# Clone the repo
+git clone https://github.com/thumpersecure/telespotter.git
+cd telespotter
+
+# Build optimized release
+cargo build --release
+
+# Run it!
+./target/release/telespotter --help
+```
+
+### Install System-Wide 🌍
+
+```bash
+cargo install --path .
+telespotter --help
+```
+
+### Prerequisites 📋
+
+- 🦀 **Rust 1.70+** — Install from [rustup.rs](https://rustup.rs/)
 
 ```bash
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
-## 📥 Installation
-
-### Option 1: Build from Source (Recommended)
-
-```bash
-# Clone the repository
-git clone https://github.com/thumpersecure/telespotter-rust.git
-cd telespotter-rust
-
-# Build release version (optimized)
-cargo build --release
-
-# The binary will be at: target/release/telespotter
-./target/release/telespotter --help
-```
-
-### Option 2: Install with Cargo
-
-```bash
-cargo install --path .
-
-# Now you can run from anywhere
-telespotter --help
-```
-
-### Option 3: Quick Build Script
-
-```bash
-# Use the provided build script
-chmod +x build.sh
-./build.sh
-
-# This will:
-# - Check Rust installation
-# - Build optimized binary
-# - Copy to /usr/local/bin (optional)
-```
+---
 
 ## 🚀 Usage
 
-### Basic Usage
-
-Run the program and enter the phone number when prompted:
+### Basic Search
 
 ```bash
+# Interactive mode (prompts for number)
 telespotter
+
+# Direct number input
+telespotter 5551234567
+telespotter "(555) 123-4567"
+telespotter 1-555-123-4567
 ```
 
-### Command-Line Usage
-
-Pass the phone number as an argument:
+### 🎯 Quick Examples
 
 ```bash
-telespotter 5555551212
-telespotter "(555) 555-1212"
-telespotter 1-555-555-1212
+# 🔥 Full OSINT scan with everything enabled
+telespotter 5551234567 -p --random-ua -c -s
+
+# 🔍 Search with people lookup sites
+telespotter 5551234567 -p
+
+# 🎭 Use random user agents to avoid detection
+telespotter 5551234567 --random-ua
+
+# ⚡ Fast concurrent mode
+telespotter 5551234567 -c
+
+# 💾 Auto-save results to JSON
+telespotter 5551234567 -s
+
+# 🐛 Debug mode for troubleshooting
+telespotter 5551234567 -d
 ```
 
-### Advanced Options
+### 🏠 People Search Options
 
 ```bash
-# Debug mode - shows errors and sample results
-telespotter --debug 5555551212
-telespotter -d 5555551212
+# Search ALL people lookup sites
+telespotter 5551234567 -p
 
-# Specify number of results per search engine (default: 5)
-telespotter -n 10 5555551212
+# Search specific sites only
+telespotter 5551234567 -p --whitepages
+telespotter 5551234567 -p --truepeoplesearch
+telespotter 5551234567 -p --fastpeoplesearch
+telespotter 5551234567 -p --thatsthem
+telespotter 5551234567 -p --usphonebook
 
-# Auto-save results to JSON
-telespotter --save 5555551212
-telespotter -s 5555551212
-
-# Combine options
-telespotter -d -s -n 8 5555551212
+# Combine multiple sites
+telespotter 5551234567 -p --whitepages --thatsthem
 ```
 
-### 🔑 Google API Setup (Optional but Recommended)
-
-TeleSpotter supports Google Custom Search API for more reliable results:
+### 🔎 OSINT Tool Integration
 
 ```bash
-# Set your API credentials
-export GOOGLE_API_KEY="your_api_key_here"
-export GOOGLE_SEARCH_ENGINE_ID="your_search_engine_id"
+# Auto-run Sherlock on found usernames
+telespotter 5551234567 --sherlock
 
-# Run normally - API will be used automatically
-telespotter 5555551212
+# Auto-run Blackbird on found emails
+telespotter 5551234567 --blackbird
+
+# Run email2phonenumber reverse lookup
+telespotter 5551234567 --email2phone
+
+# Skip OSINT prompts (for scripting)
+telespotter 5551234567 --no-osint-prompts
 ```
 
-**Benefits:**
-- ✅ 100 free searches per day
-- ✅ More reliable than web scraping
-- ✅ No CAPTCHAs
-- ✅ Faster results
-
-**Setup Guide:** See [GOOGLE_API_SETUP.md](GOOGLE_API_SETUP.md) for detailed instructions on getting your API key.
-
-**Note:** Without API credentials, TeleSpotter automatically uses web scraping (still works great!).
-
-### Command-Line Help
+### 🛠️ Advanced Options
 
 ```bash
-telespotter --help
+# Custom number of results per engine (default: 5)
+telespotter 5551234567 -n 10
+
+# Adjust timeout (seconds)
+telespotter 5551234567 -t 30
+
+# Custom delay between requests (seconds)
+telespotter 5551234567 --delay 2
+
+# Select specific search engines
+telespotter 5551234567 -e google
+telespotter 5551234567 -e google -e bing
+
+# Output formats
+telespotter 5551234567 -s -f json    # JSON (default)
+telespotter 5551234567 -s -f csv     # CSV format
+telespotter 5551234567 -s -f txt     # Plain text
+
+# Custom output file
+telespotter 5551234567 -s -o results.json
+
+# Limit analysis display
+telespotter 5551234567 --max-names 5 --max-locations 5
+
+# Quiet mode (minimal output)
+telespotter 5551234567 -q
+
+# No colors (for piping/logging)
+telespotter 5551234567 --no-color
 ```
 
-Output:
+---
+
+## 📋 All Command-Line Options
+
 ```
-Phone number OSINT search tool for legal investigations - Multi-Engine Search
+USAGE:
+    telespotter [OPTIONS] [PHONE_NUMBER]
 
-Usage: telespotter [OPTIONS] [PHONE_NUMBER]
+ARGUMENTS:
+    [PHONE_NUMBER]    Phone number (digits only or formatted)
 
-Arguments:
-  [PHONE_NUMBER]  Phone number (digits only or formatted)
-
-Options:
-  -d, --debug              Enable debug mode
-  -n, --num-results <NUM>  Number of results per search engine [default: 5]
-  -s, --save               Save results to JSON file
-  -h, --help               Print help
-  -V, --version            Print version
+OPTIONS:
+    -d, --debug                 🐛 Enable debug mode
+    -n, --num-results <NUM>     🔢 Results per search engine [default: 5]
+    -s, --save                  💾 Auto-save results to file
+    -t, --timeout <SECS>        ⏱️  HTTP timeout in seconds [default: 10]
+        --delay <SECS>          ⏳ Delay between requests [default: 1]
+    -o, --output <FILE>         📁 Custom output file path
+    -f, --format <FMT>          📄 Output format: json, csv, txt [default: json]
+    -e, --engines <ENGINE>      🔍 Engines: google, bing, duckduckgo, all
+    -q, --quiet                 🤫 Quiet mode (minimal output)
+        --no-color              🎨 Disable colored output
+        --max-names <NUM>       📛 Max names to display [default: 10]
+        --max-locations <NUM>   📍 Max locations to display [default: 10]
+    -c, --concurrent            ⚡ Concurrent searches (faster)
+        --retries <NUM>         🔄 Retry attempts [default: 2]
+        --random-ua             🎭 Random user agent rotation
+    -p, --people-search         🏠 Search people lookup sites
+        --whitepages            📖 Search Whitepages
+        --truepeoplesearch      👥 Search TruePeopleSearch
+        --fastpeoplesearch      ⚡ Search FastPeopleSearch
+        --thatsthem             🎯 Search ThatsThem
+        --usphonebook           📱 Search USPhoneBook
+        --sherlock              🔎 Auto-run Sherlock on usernames
+        --blackbird             🐦 Auto-run Blackbird on emails
+        --email2phone           📱 Run email2phonenumber lookup
+        --no-osint-prompts      🚫 Skip OSINT tool prompts
+    -h, --help                  ❓ Print help
+    -V, --version               📌 Print version
 ```
 
-## 🔢 Search Formats
+---
 
-The tool searches for the following format variations across **all three search engines**:
-
-1. `555-555-1212` - Dashes
-2. `(555) 555-1212` - Parentheses and dashes
-3. `5555551212` - Digits only
-4. `1 555-555-1212` - Country code with dashes
-
-Each format is searched on:
-- 🔵 **Google** (5 results per format by default)
-- 🟢 **Bing** (5 results per format by default)
-- 🦆 **DuckDuckGo** (5 results per format by default)
-
-**Total**: Up to 60 results per search (4 formats × 3 engines × 5 results)
-
-## 📊 Output
-
-### Pattern Analysis Summary 📈
-
-The tool provides:
-
-- **Total results found** across all search engines
-- **Results by source** (Google, Bing, DuckDuckGo breakdown)
-- **📛 Names found** - People's names associated with the number
-- **📍 Locations mentioned** - Cities, states, and zip codes
-- **🔍 Key insights** - Most frequently appearing name and location
-
-### Example Output
+## 📊 Sample Output
 
 ```
 ================================================================================
 PATTERN ANALYSIS SUMMARY
 ================================================================================
 
-Total Results Found: 42
+Total Results Found: 47
 
 Results by Source:
-  • Google: 18 results
-  • Bing: 15 results
-  • DuckDuckGo: 9 results
+  • Google: 15 results
+  • Bing: 12 results
+  • DuckDuckGo: 8 results
+  • Whitepages: 4 results
+  • TruePeopleSearch: 5 results
+  • ThatsThem: 3 results
 
 📛 Names Found:
   • John Smith: mentioned 8 time(s)
   • Jane Doe: mentioned 3 time(s)
-  • Mike Johnson: mentioned 2 time(s)
+  • Michael Johnson: mentioned 2 time(s)
 
 📍 Locations Mentioned:
   • Philadelphia, PA: 12 occurrence(s)
   • PA: 8 occurrence(s)
   • 19102: 3 occurrence(s)
+
+📧 Emails Found:
+  • jsmith@email.com: 2 occurrence(s)
+  • contact@business.com: 1 occurrence(s)
+
+👤 Usernames/Social Media Found:
+  • @johnsmith: 3 occurrence(s)
+  • @jsmith2024: 1 occurrence(s)
 
 🔍 Key Insights:
   • Most associated name: John Smith
@@ -232,191 +285,174 @@ Results by Source:
 ================================================================================
 ```
 
-## 💾 Saving Results
+---
 
-Results can be saved to JSON format:
+## 🎯 Use Cases
 
-```bash
-# Auto-save with -s flag
-telespotter -s 5555551212
+| Use Case | Command Example |
+|----------|-----------------|
+| 🕵️ **Full OSINT Investigation** | `telespotter 5551234567 -p --random-ua -c -s --sherlock` |
+| 🚫 **Spam Number Check** | `telespotter 5551234567 -p -s` |
+| ✅ **Business Verification** | `telespotter 5551234567 -p --whitepages` |
+| 🔎 **Skip Tracing** | `telespotter 5551234567 -p -n 10 --max-names 20` |
+| ⚖️ **Legal Investigation** | `telespotter 5551234567 -p -s -f txt -o evidence.txt` |
+| 🤖 **Automated/Scripted** | `telespotter 5551234567 -q --no-osint-prompts -s` |
 
-# Or answer 'y' when prompted
-telespotter 5555551212
-# > Save detailed results to file? (y/n): y
-```
+---
 
-The JSON file contains:
-- Original phone number
-- All search format variations used
-- Complete search results from all engines
-- Full pattern analysis data (names and locations)
+## ⚡ Performance
 
-Filename format: `telespotter_results_5555551212.json`
-
-## ⏱️ Performance
-
-### Benchmark Comparison (Rust vs Python)
+### Rust vs Python Comparison
 
 | Metric | Python | Rust | Improvement |
 |--------|--------|------|-------------|
-| Execution Time | 65s | 18s | **3.6x faster** |
-| Memory Usage | 48MB | 8MB | **6x less** |
-| Binary Size | N/A (needs Python) | 4.2MB | Single file |
-| Startup Time | 800ms | 2ms | **400x faster** |
+| ⏱️ Execution | 65s | 18s | **3.6x faster** |
+| 💾 Memory | 48MB | 8MB | **6x less** |
+| 📦 Binary | Needs Python | 4.2MB | **Single file** |
+| 🚀 Startup | 800ms | 2ms | **400x faster** |
 
-*Tested on: 10-digit phone number, 4 formats, 3 engines, 5 results each*
+---
 
 ## 🔧 Development
 
 ### Project Structure
 
 ```
-telespotter-rust/
-├── Cargo.toml              # Dependencies and metadata
-├── src/
-│   ├── main.rs            # Entry point and CLI
-│   ├── phone.rs           # Phone number formatting
-│   ├── search.rs          # Common search types
-│   ├── google.rs          # Google search implementation
-│   ├── bing.rs            # Bing search implementation
-│   ├── duckduckgo.rs      # DuckDuckGo search implementation
-│   ├── parser.rs          # Name/location extraction
-│   └── analysis.rs        # Pattern analysis
-├── README.md
-├── LICENSE
-└── build.sh               # Build script
+telespotter/
+├── 📄 Cargo.toml           # Dependencies
+├── 📄 main.rs              # Entry point & CLI
+├── 📄 phone.rs             # Phone formatting
+├── 📄 search.rs            # HTTP client & config
+├── 📄 google.rs            # Google scraper
+├── 📄 bing.rs              # Bing scraper
+├── 📄 duckduckgo.rs        # DuckDuckGo scraper
+├── 📄 whitepages.rs        # Whitepages scraper
+├── 📄 truepeoplesearch.rs  # TruePeopleSearch scraper
+├── 📄 fastpeoplesearch.rs  # FastPeopleSearch scraper
+├── 📄 thatsthem.rs         # ThatsThem scraper
+├── 📄 usphonebook.rs       # USPhoneBook scraper
+├── 📄 parser.rs            # Pattern extraction
+├── 📄 analysis.rs          # Results analysis
+└── 📄 README.md
 ```
 
-### Running Tests
+### Building & Testing
 
 ```bash
-# Run all tests
+# 🔨 Build debug version
+cargo build
+
+# 🚀 Build optimized release
+cargo build --release
+
+# 🧪 Run tests
 cargo test
 
-# Run tests with output
-cargo test -- --nocapture
-
-# Run specific test
-cargo test test_extract_names
-```
-
-### Building for Different Targets
-
-```bash
-# Linux x86_64
-cargo build --release --target x86_64-unknown-linux-gnu
-
-# macOS x86_64
-cargo build --release --target x86_64-apple-darwin
-
-# macOS ARM64 (M1/M2)
-cargo build --release --target aarch64-apple-darwin
-
-# Windows
-cargo build --release --target x86_64-pc-windows-gnu
-```
-
-### Code Formatting and Linting
-
-```bash
-# Format code
+# 📝 Format code
 cargo fmt
 
-# Run linter
+# 🔍 Lint code
 cargo clippy
-
-# Check for issues
-cargo check
 ```
 
-## 🎯 Use Cases
+---
 
-- **OSINT investigations** 🕵️: Gather information about unknown phone numbers
-- **Spam identification** 🚫: Check if a number is associated with spam/scam reports
-- **Contact verification** ✅: Verify the legitimacy of business phone numbers
-- **Skip tracing** 🔎: Locate associated names and addresses
-- **Fraud investigation** ⚖️: Part of legal work gathering evidence
+## 🛡️ Optional OSINT Tools
 
-## 🔒 Privacy & Legal Considerations
+For enhanced functionality, install these tools:
 
-- This tool uses publicly available search data
-- Use responsibly and in compliance with applicable laws
-- Respect privacy and data protection regulations
-- Intended for legitimate investigative purposes
-
-## 🔧 Troubleshooting
-
-### Compilation Issues
-
-**Error: `rustc` not found**
+### Sherlock 🔎
 ```bash
-# Install Rust
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-source $HOME/.cargo/env
+pip install sherlock-project
 ```
 
-**Error: linking with `cc` failed**
+### Blackbird 🐦
 ```bash
-# Ubuntu/Debian
-sudo apt-get install build-essential
-
-# macOS (install Xcode Command Line Tools)
-xcode-select --install
+pip install blackbird
 ```
 
-### Runtime Issues
+### email2phonenumber 📱
+```bash
+pip install email2phonenumber
+```
 
-**Getting 0 results for all searches**
-- Check internet connection
-- Try with debug mode: `telespotter -d 5555551212`
-- Search engines may be rate-limiting your IP
-- Try again in 10-15 minutes
+---
 
-**Connection timeout errors**
-- Check firewall settings
-- Verify no proxy is interfering
-- Search engine may be temporarily down
+## 🔒 Privacy & Legal
+
+> ⚠️ **Important**: This tool is for **legitimate investigative purposes only**.
+
+- ✅ Uses publicly available search data
+- ✅ Respect privacy laws and regulations
+- ✅ Obtain proper authorization when required
+- ❌ Do not use for harassment or stalking
+- ❌ Do not violate terms of service
+
+---
+
+## 🆘 Troubleshooting
+
+### Common Issues
+
+| Problem | Solution |
+|---------|----------|
+| 🔴 0 results | Try `-d` debug mode, check internet, wait 10-15 min |
+| 🔴 Timeout errors | Increase with `-t 30`, check firewall |
+| 🔴 Rate limited | Use `--delay 3` and `--random-ua` |
+| 🔴 Build errors | Run `rustup update` and `cargo clean` |
+
+### Getting Help
+
+```bash
+# Show all options
+telespotter --help
+
+# Debug mode for errors
+telespotter -d 5551234567
+```
+
+---
 
 ## 📦 Dependencies
 
-Core dependencies:
-- `tokio` - Async runtime
-- `reqwest` - HTTP client
-- `scraper` - HTML parsing
-- `clap` - CLI parsing
-- `colored` - Terminal colors
-- `serde/serde_json` - Serialization
-- `regex` - Pattern matching
-- `anyhow/thiserror` - Error handling
+| Crate | Purpose |
+|-------|---------|
+| `tokio` | ⚡ Async runtime |
+| `reqwest` | 🌐 HTTP client |
+| `scraper` | 📄 HTML parsing |
+| `clap` | 🖥️ CLI parsing |
+| `colored` | 🎨 Terminal colors |
+| `serde` | 📦 Serialization |
+| `regex` | 🔍 Pattern matching |
+| `rand` | 🎲 Random selection |
+
+---
 
 ## 👤 Author
 
 Created by **Spin Apin** ([@thumpersecure](https://github.com/thumpersecure))
 
-Rust port of the original Python version. Designed for legal marketing and investigative purposes.
+---
 
 ## 🤝 Contributing
 
-Contributions are welcome! Feel free to:
-- 🐛 Report bugs via [GitHub Issues](https://github.com/thumpersecure/telespotter-rust/issues)
-- 💡 Suggest features or enhancements
+- 🐛 [Report bugs](https://github.com/thumpersecure/telespotter/issues)
+- 💡 Suggest features
 - 🔧 Submit pull requests
-- ⭐ Star the repository if you find it useful
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-**Disclaimer:** This tool is intended for legitimate investigative and OSINT purposes only. Users are responsible for ensuring their use complies with all applicable laws and regulations.
-
-## 🔗 Links
-
-- **Original Python Version**: [https://github.com/thumpersecure/Telespot](https://github.com/thumpersecure/Telespot)
-- **Rust Version Repository**: [https://github.com/thumpersecure/telespotter-rust](https://github.com/thumpersecure/telespotter-rust)
-- **Report Issues**: [https://github.com/thumpersecure/telespotter-rust/issues](https://github.com/thumpersecure/telespotter-rust/issues)
+- ⭐ Star if you find it useful!
 
 ---
 
-Made with 💻 and 🦀 for OSINT and investigative work
+## 📄 License
 
-**Python → Rust**: Because sometimes you need that extra speed! ⚡
+MIT License — see [LICENSE](LICENSE) for details.
+
+---
+
+<div align="center">
+
+Made with 💻 and 🦀 for OSINT professionals
+
+**⚡ Fast • 🔒 Safe • 🎯 Effective**
+
+</div>
