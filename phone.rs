@@ -39,15 +39,21 @@ impl PhoneFormatter {
     }
 
     pub fn generate_formats(&self) -> Vec<String> {
+        let (a, p, l) = (&self.area, &self.prefix, &self.line);
         vec![
-            // Format 1: 555-555-1212
-            format!("{}-{}-{}", self.area, self.prefix, self.line),
-            // Format 2: (555) 555-1212
-            format!("({}) {}-{}", self.area, self.prefix, self.line),
-            // Format 3: 5555551212
-            format!("{}{}{}", self.area, self.prefix, self.line),
-            // Format 4: 1 555-555-1212
-            format!("{} {}-{}-{}", self.country, self.area, self.prefix, self.line),
+            // 4 basic formats
+            format!("{}-{}-{}", a, p, l),      // 215-555-1234
+            format!("{}{}{}", a, p, l),        // 2155551234
+            format!("({}) {}-{}", a, p, l),    // (215) 555-1234
+            format!("+1{}-{}-{}", a, p, l),    // +1215-555-1234
+            // 4 quoted (exact-match) formats
+            format!("\"{}-{}-{}\"", a, p, l),   // "215-555-1234"
+            format!("\"{}{}{}\"", a, p, l),     // "2155551234"
+            format!("\"({}) {}-{}\"", a, p, l), // "(215) 555-1234"
+            format!("\"+1{}-{}-{}\"", a, p, l), // "+1215-555-1234"
+            // 2 special formats
+            format!("({}-{}-{})", a, p, l),     // (215-555-1234)
+            format!("\"{}.{}.{}\"", a, p, l),   // "215.555.1234"
         ]
     }
 }
@@ -60,11 +66,14 @@ mod tests {
     fn test_10_digit_number() {
         let formatter = PhoneFormatter::new("5555551212").unwrap();
         let formats = formatter.generate_formats();
-        assert_eq!(formats.len(), 4);
+        assert_eq!(formats.len(), 10);
         assert_eq!(formats[0], "555-555-1212");
-        assert_eq!(formats[1], "(555) 555-1212");
-        assert_eq!(formats[2], "5555551212");
-        assert_eq!(formats[3], "1 555-555-1212");
+        assert_eq!(formats[1], "5555551212");
+        assert_eq!(formats[2], "(555) 555-1212");
+        assert_eq!(formats[3], "+1555-555-1212");
+        assert_eq!(formats[4], "\"555-555-1212\"");
+        assert_eq!(formats[6], "\"(555) 555-1212\"");
+        assert_eq!(formats[9], "\"555.555.1212\"");
     }
 
     #[test]
