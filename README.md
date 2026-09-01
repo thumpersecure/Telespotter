@@ -1,5 +1,8 @@
 <div align="center">
 
+<!-- Social preview -->
+<img src="og-preview.png" alt="TeleSpotter — Phone Number OSINT in Rust" width="100%" />
+
 <!-- Animated Typing Header -->
 <a href="https://github.com/thumpersecure/telespotter">
   <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=28&duration=3000&pause=1000&color=00D4FF&center=true&vCenter=true&multiline=true&repeat=true&width=600&height=100&lines=%F0%9F%93%9E+TELESPOTTER+%F0%9F%94%8D;Phone+Number+OSINT+Tool;Written+in+Rust+%F0%9F%A6%80" alt="TeleSpotter" />
@@ -23,7 +26,7 @@
 [![Version](https://img.shields.io/badge/Version-2.1.0-7c3aed?style=for-the-badge)](https://github.com/thumpersecure/telespotter)
 [![Stars](https://img.shields.io/github/stars/thumpersecure/telespotter?style=for-the-badge&color=fbbf24)](https://github.com/thumpersecure/telespotter)
 
-**A blazingly fast phone number OSINT tool** — Search across multiple engines and people lookup sites to gather intelligence on any US phone number.
+**A blazingly fast phone number OSINT tool** — Search across multiple engines and people lookup sites to gather intelligence on any US phone number. Every number is searched in **10 format variations** (dashed, parenthesized, quoted exact-match, and international) to maximize hits.
 
 <img src="https://capsule-render.vercel.app/api?type=rect&color=gradient&customColorList=0,2,2,5,30&height=2&section=header" width="100%"/>
 
