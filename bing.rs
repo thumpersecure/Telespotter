@@ -1,16 +1,15 @@
-use crate::search::{create_client_from_config, SearchConfig, SearchResult};
+use crate::search::{is_blocked_page, BlockedError, SearchResult};
 use anyhow::Result;
 use scraper::{Html, Selector};
 
 /// Search Bing with default configuration
 #[allow(dead_code)]
-pub async fn search(query: &str, num_results: usize) -> Result<Vec<SearchResult>> {
-    search_with_config(query, num_results, &SearchConfig::default()).await
+pub async fn search(query: &str, num_results: usize, client: &reqwest::Client) -> Result<Vec<SearchResult>> {
+    search_with_config(query, num_results, client).await
 }
 
-/// Search Bing with custom configuration
-pub async fn search_with_config(query: &str, num_results: usize, config: &SearchConfig) -> Result<Vec<SearchResult>> {
-    let client = create_client_from_config(config);
+/// Search Bing with a shared client
+pub async fn search_with_config(query: &str, num_results: usize, client: &reqwest::Client) -> Result<Vec<SearchResult>> {
     // Wrap query in quotes for exact phrase matching
     let quoted_query = format!("\"{}\"", query);
     let encoded_query = urlencoding::encode(&quoted_query);
@@ -26,6 +25,11 @@ pub async fn search_with_config(query: &str, num_results: usize, config: &Search
     }
 
     let html = response.text().await?;
+
+    if is_blocked_page(&html) {
+        return Err(BlockedError { engine: "Bing".to_string() }.into());
+    }
+
     let document = Html::parse_document(&html);
 
     let mut results = Vec::new();

@@ -1,10 +1,9 @@
-use crate::search::{create_client_from_config, SearchConfig, SearchResult};
+use crate::search::SearchResult;
 use anyhow::Result;
 use scraper::{Html, Selector};
 
 /// Search Whitepages for phone number information
-pub async fn search_with_config(phone: &str, config: &SearchConfig) -> Result<Vec<SearchResult>> {
-    let client = create_client_from_config(config);
+pub async fn search_with_config(phone: &str, client: &reqwest::Client) -> Result<Vec<SearchResult>> {
 
     // Format phone for Whitepages URL (digits only)
     let digits: String = phone.chars().filter(|c| c.is_numeric()).collect();

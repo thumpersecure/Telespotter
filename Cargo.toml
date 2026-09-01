@@ -16,7 +16,7 @@ path = "main.rs"
 tokio = { version = "1.35", features = ["full"] }
 
 # HTTP client
-reqwest = { version = "0.11", features = ["json"] }
+reqwest = { version = "0.11", features = ["json", "gzip", "brotli"] }
 
 # HTML parsing
 scraper = "0.18"
@@ -33,14 +33,10 @@ serde_json = "1.0"
 
 # Error handling
 anyhow = "1.0"
-thiserror = "1.0"
 
 # Text processing
 regex = "1.10"
 lazy_static = "1.4"
-
-# Progress indicators
-indicatif = "0.17"
 
 # Time utilities
 chrono = "0.4"

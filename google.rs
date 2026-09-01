@@ -1,4 +1,4 @@
-use crate::search::{create_client_from_config, SearchConfig, SearchResult};
+use crate::search::{is_blocked_page, BlockedError, SearchResult};
 use anyhow::Result;
 use scraper::{Html, Selector};
 use serde::Deserialize;
@@ -18,12 +18,12 @@ struct GoogleSearchItem {
 /// Search using Google Custom Search API if credentials are available,
 /// otherwise fall back to web scraping
 #[allow(dead_code)]
-pub async fn search(query: &str, num_results: usize) -> Result<Vec<SearchResult>> {
-    search_with_config(query, num_results, &SearchConfig::default()).await
+pub async fn search(query: &str, num_results: usize, client: &reqwest::Client) -> Result<Vec<SearchResult>> {
+    search_with_config(query, num_results, client).await
 }
 
-/// Search with custom configuration
-pub async fn search_with_config(query: &str, num_results: usize, config: &SearchConfig) -> Result<Vec<SearchResult>> {
+/// Search with a shared HTTP client
+pub async fn search_with_config(query: &str, num_results: usize, client: &reqwest::Client) -> Result<Vec<SearchResult>> {
     // Check for API credentials in environment variables
     let api_key = env::var("GOOGLE_API_KEY").ok();
     let search_engine_id = env::var("GOOGLE_SEARCH_ENGINE_ID").ok();
@@ -31,11 +31,11 @@ pub async fn search_with_config(query: &str, num_results: usize, config: &Search
     match (api_key, search_engine_id) {
         (Some(key), Some(cx)) => {
             // Use official API if credentials are available
-            search_with_api_config(query, num_results, &key, &cx, config).await
+            search_with_api_config(query, num_results, &key, &cx, client).await
         }
         _ => {
             // Fall back to web scraping
-            search_with_scraping_config(query, num_results, config).await
+            search_with_scraping_config(query, num_results, client).await
         }
     }
 }
@@ -47,19 +47,19 @@ async fn search_with_api(
     num_results: usize,
     api_key: &str,
     cx: &str,
+    client: &reqwest::Client,
 ) -> Result<Vec<SearchResult>> {
-    search_with_api_config(query, num_results, api_key, cx, &SearchConfig::default()).await
+    search_with_api_config(query, num_results, api_key, cx, client).await
 }
 
-/// Search using Google Custom Search API with config
+/// Search using Google Custom Search API with a shared client
 async fn search_with_api_config(
     query: &str,
     num_results: usize,
     api_key: &str,
     cx: &str,
-    config: &SearchConfig,
+    client: &reqwest::Client,
 ) -> Result<Vec<SearchResult>> {
-    let client = create_client_from_config(config);
     // Wrap query in quotes for exact phrase matching
     let quoted_query = format!("\"{}\"", query);
     let encoded_query = urlencoding::encode(&quoted_query);
@@ -96,13 +96,12 @@ async fn search_with_api_config(
 
 /// Search using web scraping (fallback method)
 #[allow(dead_code)]
-async fn search_with_scraping(query: &str, num_results: usize) -> Result<Vec<SearchResult>> {
-    search_with_scraping_config(query, num_results, &SearchConfig::default()).await
+async fn search_with_scraping(query: &str, num_results: usize, client: &reqwest::Client) -> Result<Vec<SearchResult>> {
+    search_with_scraping_config(query, num_results, client).await
 }
 
-/// Search using web scraping with config
-async fn search_with_scraping_config(query: &str, num_results: usize, config: &SearchConfig) -> Result<Vec<SearchResult>> {
-    let client = create_client_from_config(config);
+/// Search using web scraping with a shared client
+async fn search_with_scraping_config(query: &str, num_results: usize, client: &reqwest::Client) -> Result<Vec<SearchResult>> {
     // Wrap query in quotes for exact phrase matching
     let quoted_query = format!("\"{}\"", query);
     let encoded_query = urlencoding::encode(&quoted_query);
@@ -118,16 +117,26 @@ async fn search_with_scraping_config(query: &str, num_results: usize, config: &S
     }
 
     let html = response.text().await?;
+
+    // Detect block / CAPTCHA / consent pages that return 200 but no results
+    if is_blocked_page(&html) {
+        return Err(BlockedError { engine: "Google".to_string() }.into());
+    }
+
     let document = Html::parse_document(&html);
 
     let mut results = Vec::new();
 
-    // Selector for main search result divs
-    let result_selector = Selector::parse("div.g").unwrap();
+    // Modern Google SERP containers (div.g is largely gone); fall back broadly.
+    let result_selector =
+        Selector::parse("div.MjjYud, div.tF2Cxc, div.g, div.Gx5Zad").unwrap();
     let title_selector = Selector::parse("h3").unwrap();
     let snippet_selectors = vec![
         Selector::parse("div.VwiC3b").unwrap(),
         Selector::parse("div.yXK7lf").unwrap(),
+        Selector::parse("div[data-sncf]").unwrap(),
+        Selector::parse("div.kb0PBd").unwrap(),
+        Selector::parse("span.aCOpRe").unwrap(),
     ];
 
     for element in document.select(&result_selector) {

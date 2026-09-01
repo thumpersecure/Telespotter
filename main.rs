@@ -12,6 +12,7 @@ mod search;
 mod google;
 mod bing;
 mod duckduckgo;
+mod dehashed;
 mod parser;
 mod analysis;
 
@@ -21,6 +22,12 @@ mod truepeoplesearch;
 mod fastpeoplesearch;
 mod thatsthem;
 mod usphonebook;
+
+use std::sync::Arc;
+use tokio::sync::Semaphore;
+
+/// Maximum number of simultaneous in-flight HTTP requests in concurrent mode.
+const MAX_CONCURRENT_REQUESTS: usize = 4;
 
 use crate::phone::PhoneFormatter;
 use crate::search::{SearchResult, SearchConfig};
@@ -51,6 +58,7 @@ pub enum Engine {
     Google,
     Bing,
     Duckduckgo,
+    Dehashed,
     All,
 }
 
@@ -179,12 +187,12 @@ fn should_use_engine(engines: &[Engine], target: Engine) -> bool {
 async fn search_google_with_retry(
     query: &str,
     num_results: usize,
-    config: &SearchConfig,
+    client: &reqwest::Client,
     retries: usize,
 ) -> anyhow::Result<Vec<SearchResult>> {
     let mut last_error = None;
     for attempt in 0..=retries {
-        match google::search_with_config(query, num_results, config).await {
+        match google::search_with_config(query, num_results, client).await {
             Ok(results) => return Ok(results),
             Err(e) => {
                 last_error = Some(e);
@@ -201,12 +209,12 @@ async fn search_google_with_retry(
 async fn search_bing_with_retry(
     query: &str,
     num_results: usize,
-    config: &SearchConfig,
+    client: &reqwest::Client,
     retries: usize,
 ) -> anyhow::Result<Vec<SearchResult>> {
     let mut last_error = None;
     for attempt in 0..=retries {
-        match bing::search_with_config(query, num_results, config).await {
+        match bing::search_with_config(query, num_results, client).await {
             Ok(results) => return Ok(results),
             Err(e) => {
                 last_error = Some(e);
@@ -223,12 +231,33 @@ async fn search_bing_with_retry(
 async fn search_duckduckgo_with_retry(
     query: &str,
     num_results: usize,
-    config: &SearchConfig,
+    client: &reqwest::Client,
     retries: usize,
 ) -> anyhow::Result<Vec<SearchResult>> {
     let mut last_error = None;
     for attempt in 0..=retries {
-        match duckduckgo::search_with_config(query, num_results, config).await {
+        match duckduckgo::search_with_config(query, num_results, client).await {
+            Ok(results) => return Ok(results),
+            Err(e) => {
+                last_error = Some(e);
+                if attempt < retries {
+                    sleep(Duration::from_millis(500 * (attempt as u64 + 1))).await;
+                }
+            }
+        }
+    }
+    Err(last_error.unwrap())
+}
+
+/// Search Dehashed with retries
+async fn search_dehashed_with_retry(
+    query: &str,
+    client: &reqwest::Client,
+    retries: usize,
+) -> anyhow::Result<Vec<SearchResult>> {
+    let mut last_error = None;
+    for attempt in 0..=retries {
+        match dehashed::search_with_config(query, client).await {
             Ok(results) => return Ok(results),
             Err(e) => {
                 last_error = Some(e);
@@ -246,49 +275,56 @@ async fn search_engine(
     engine: &str,
     query: &str,
     num_results: usize,
-    config: &SearchConfig,
+    client: &reqwest::Client,
     retries: usize,
 ) -> anyhow::Result<Vec<SearchResult>> {
     match engine {
-        "google" => search_google_with_retry(query, num_results, config, retries).await,
-        "bing" => search_bing_with_retry(query, num_results, config, retries).await,
-        "duckduckgo" => search_duckduckgo_with_retry(query, num_results, config, retries).await,
+        "google" => search_google_with_retry(query, num_results, client, retries).await,
+        "bing" => search_bing_with_retry(query, num_results, client, retries).await,
+        "duckduckgo" => search_duckduckgo_with_retry(query, num_results, client, retries).await,
+        "dehashed" => search_dehashed_with_retry(query, client, retries).await,
         _ => Ok(Vec::new()),
     }
 }
 
-/// Search all enabled engines concurrently
+/// Search all enabled engines concurrently.
+/// A shared semaphore caps the number of simultaneous in-flight requests so we
+/// don't fire every engine (and now every format) at once.
 async fn search_concurrent(
     query: &str,
     num_results: usize,
-    config: &SearchConfig,
+    client: &Arc<reqwest::Client>,
     engines: &[Engine],
     retries: usize,
+    semaphore: &Arc<Semaphore>,
 ) -> Vec<(String, anyhow::Result<Vec<SearchResult>>)> {
-    let mut handles = Vec::new();
+    let mut handles: Vec<(String, tokio::task::JoinHandle<anyhow::Result<Vec<SearchResult>>>)> =
+        Vec::new();
+
+    let spawn_engine = |name: &str, key: &'static str| {
+        let q = query.to_string();
+        let cl = Arc::clone(client);
+        let sem = Arc::clone(semaphore);
+        (name.to_string(), tokio::spawn(async move {
+            // Hold a permit for the duration of this engine's request(s).
+            let _permit = sem.acquire().await.expect("semaphore closed");
+            search_engine(key, &q, num_results, &cl, retries).await
+        }))
+    };
 
     if should_use_engine(engines, Engine::Google) {
-        let q = query.to_string();
-        let cfg = config.clone();
-        handles.push(("Google".to_string(), tokio::spawn(async move {
-            search_engine("google", &q, num_results, &cfg, retries).await
-        })));
+        handles.push(spawn_engine("Google", "google"));
     }
-
     if should_use_engine(engines, Engine::Bing) {
-        let q = query.to_string();
-        let cfg = config.clone();
-        handles.push(("Bing".to_string(), tokio::spawn(async move {
-            search_engine("bing", &q, num_results, &cfg, retries).await
-        })));
+        handles.push(spawn_engine("Bing", "bing"));
     }
-
     if should_use_engine(engines, Engine::Duckduckgo) {
-        let q = query.to_string();
-        let cfg = config.clone();
-        handles.push(("DuckDuckGo".to_string(), tokio::spawn(async move {
-            search_engine("duckduckgo", &q, num_results, &cfg, retries).await
-        })));
+        handles.push(spawn_engine("DuckDuckGo", "duckduckgo"));
+    }
+    // Dehashed only runs when explicitly requested (needs an API key); it is not
+    // part of the "all" default so a missing key doesn't add noise.
+    if engines.contains(&Engine::Dehashed) {
+        handles.push(spawn_engine("Dehashed", "dehashed"));
     }
 
     let mut results = Vec::new();
@@ -524,11 +560,14 @@ async fn main() -> anyhow::Result<()> {
         format!("Generated {} search format variations\n", formats.len()).green(),
         format!("Generated {} search format variations\n", formats.len()));
 
-    // Create search config
+    // Create search config and build ONE shared HTTP client (built once, passed
+    // by reference/Arc to every search function instead of rebuilt per request).
     let config = SearchConfig {
         timeout_secs: args.timeout,
         random_user_agent: args.random_ua,
     };
+    let client = Arc::new(search::create_client_from_config(&config)?);
+    let semaphore = Arc::new(Semaphore::new(MAX_CONCURRENT_REQUESTS));
 
     if args.random_ua && !args.quiet {
         qprint!(args.quiet, args.no_color,
@@ -549,7 +588,7 @@ async fn main() -> anyhow::Result<()> {
 
         if args.concurrent {
             // Concurrent search mode
-            let results = search_concurrent(format, args.num_results, &config, &args.engines, args.retries).await;
+            let results = search_concurrent(format, args.num_results, &client, &args.engines, args.retries, &semaphore).await;
 
             for (engine_name, result) in results {
                 match result {
@@ -578,7 +617,7 @@ async fn main() -> anyhow::Result<()> {
                 qprint_inline!(args.quiet, args.no_color,
                     "  → Searching Google... ".cyan(),
                     "  → Searching Google... ");
-                match search_engine("google", format, args.num_results, &config, args.retries).await {
+                match search_engine("google", format, args.num_results, &client, args.retries).await {
                     Ok(results) => {
                         let count = results.len();
                         format_results.extend(results);
@@ -604,7 +643,7 @@ async fn main() -> anyhow::Result<()> {
                 qprint_inline!(args.quiet, args.no_color,
                     "  → Searching Bing... ".cyan(),
                     "  → Searching Bing... ");
-                match search_engine("bing", format, args.num_results, &config, args.retries).await {
+                match search_engine("bing", format, args.num_results, &client, args.retries).await {
                     Ok(results) => {
                         let count = results.len();
                         format_results.extend(results);
@@ -630,7 +669,35 @@ async fn main() -> anyhow::Result<()> {
                 qprint_inline!(args.quiet, args.no_color,
                     "  → Searching DuckDuckGo... ".cyan(),
                     "  → Searching DuckDuckGo... ");
-                match search_engine("duckduckgo", format, args.num_results, &config, args.retries).await {
+                match search_engine("duckduckgo", format, args.num_results, &client, args.retries).await {
+                    Ok(results) => {
+                        let count = results.len();
+                        format_results.extend(results);
+                        qprint!(args.quiet, args.no_color,
+                            format!("({} results)", count).green(),
+                            format!("({} results)", count));
+                    }
+                    Err(e) if args.debug => {
+                        qprint!(args.quiet, args.no_color,
+                            format!("Error: {}", e).yellow(),
+                            format!("Error: {}", e));
+                    }
+                    Err(_) => {
+                        qprint!(args.quiet, args.no_color,
+                            "(0 results)".yellow(),
+                            "(0 results)");
+                    }
+                }
+                sleep(Duration::from_secs(args.delay)).await;
+            }
+
+            // Dehashed only runs when explicitly requested (needs DEHASHED_API_KEY);
+            // not part of the "all" default so a missing key doesn't add noise.
+            if args.engines.contains(&Engine::Dehashed) {
+                qprint_inline!(args.quiet, args.no_color,
+                    "  → Searching Dehashed... ".cyan(),
+                    "  → Searching Dehashed... ");
+                match search_engine("dehashed", format, args.num_results, &client, args.retries).await {
                     Ok(results) => {
                         let count = results.len();
                         format_results.extend(results);
@@ -701,7 +768,7 @@ async fn main() -> anyhow::Result<()> {
             qprint_inline!(args.quiet, args.no_color,
                 "  → Searching Whitepages... ".cyan(),
                 "  → Searching Whitepages... ");
-            match whitepages::search_with_config(&phone_digits, &config).await {
+            match whitepages::search_with_config(&phone_digits, &client).await {
                 Ok(results) => {
                     let count = results.len();
                     people_results.extend(results);
@@ -728,7 +795,7 @@ async fn main() -> anyhow::Result<()> {
             qprint_inline!(args.quiet, args.no_color,
                 "  → Searching TruePeopleSearch... ".cyan(),
                 "  → Searching TruePeopleSearch... ");
-            match truepeoplesearch::search_with_config(&phone_digits, &config).await {
+            match truepeoplesearch::search_with_config(&phone_digits, &client).await {
                 Ok(results) => {
                     let count = results.len();
                     people_results.extend(results);
@@ -755,7 +822,7 @@ async fn main() -> anyhow::Result<()> {
             qprint_inline!(args.quiet, args.no_color,
                 "  → Searching FastPeopleSearch... ".cyan(),
                 "  → Searching FastPeopleSearch... ");
-            match fastpeoplesearch::search_with_config(&phone_digits, &config).await {
+            match fastpeoplesearch::search_with_config(&phone_digits, &client).await {
                 Ok(results) => {
                     let count = results.len();
                     people_results.extend(results);
@@ -782,7 +849,7 @@ async fn main() -> anyhow::Result<()> {
             qprint_inline!(args.quiet, args.no_color,
                 "  → Searching ThatsThem... ".cyan(),
                 "  → Searching ThatsThem... ");
-            match thatsthem::search_with_config(&phone_digits, &config).await {
+            match thatsthem::search_with_config(&phone_digits, &client).await {
                 Ok(results) => {
                     let count = results.len();
                     people_results.extend(results);
@@ -809,7 +876,7 @@ async fn main() -> anyhow::Result<()> {
             qprint_inline!(args.quiet, args.no_color,
                 "  → Searching USPhoneBook... ".cyan(),
                 "  → Searching USPhoneBook... ");
-            match usphonebook::search_with_config(&phone_digits, &config).await {
+            match usphonebook::search_with_config(&phone_digits, &client).await {
                 Ok(results) => {
                     let count = results.len();
                     people_results.extend(results);

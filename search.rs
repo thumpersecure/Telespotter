@@ -79,12 +79,12 @@ pub trait SearchEngine {
 
 /// Create HTTP client with default timeout
 #[allow(dead_code)]
-pub fn create_client() -> reqwest::Client {
+pub fn create_client() -> anyhow::Result<reqwest::Client> {
     create_client_with_timeout(10, false)
 }
 
 /// Create HTTP client with custom timeout and optional random user agent
-pub fn create_client_with_timeout(timeout_secs: u64, random_ua: bool) -> reqwest::Client {
+pub fn create_client_with_timeout(timeout_secs: u64, random_ua: bool) -> anyhow::Result<reqwest::Client> {
     let user_agent = if random_ua {
         get_random_user_agent()
     } else {
@@ -97,10 +97,72 @@ pub fn create_client_with_timeout(timeout_secs: u64, random_ua: bool) -> reqwest
         .pool_max_idle_per_host(5)
         .pool_idle_timeout(Duration::from_secs(30))
         .build()
-        .unwrap()
+        .map_err(|e| anyhow::anyhow!("Failed to build HTTP client: {}", e))
 }
 
 /// Create HTTP client from config
-pub fn create_client_from_config(config: &SearchConfig) -> reqwest::Client {
+pub fn create_client_from_config(config: &SearchConfig) -> anyhow::Result<reqwest::Client> {
     create_client_with_timeout(config.timeout_secs, config.random_user_agent)
+}
+
+/// Detect common block / CAPTCHA / consent-wall pages that return HTTP 200 but
+/// contain no real results. Returns true if the body looks like a block page.
+pub fn is_blocked_page(body: &str) -> bool {
+    let lower = body.to_lowercase();
+    const INDICATORS: &[&str] = &[
+        "captcha",
+        "unusual traffic",
+        "detected unusual activity",
+        "consent.google",
+        "/sorry/",
+        "are you a robot",
+        "verify you are a human",
+        "please verify you're a human",
+        "our systems have detected",
+        "automated queries",
+        "enablejs",
+        // DuckDuckGo anti-bot challenge (served with HTTP 202 to hosting IPs)
+        "anomaly.js",
+        "anomaly-modal",
+        "challenge-form",
+    ];
+    INDICATORS.iter().any(|i| lower.contains(i))
+}
+
+/// Error returned when an engine appears to have served a block/CAPTCHA page.
+#[derive(Debug)]
+pub struct BlockedError {
+    pub engine: String,
+}
+
+impl std::fmt::Display for BlockedError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} appears to have blocked the request (CAPTCHA / consent / unusual-traffic page)", self.engine)
+    }
+}
+
+impl std::error::Error for BlockedError {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_is_blocked_page_detects_indicators() {
+        assert!(is_blocked_page("Please complete the CAPTCHA to continue"));
+        assert!(is_blocked_page("Our systems have detected unusual traffic"));
+        assert!(is_blocked_page("<form id=\"challenge-form\" action=\"//duckduckgo.com/anomaly.js\">"));
+    }
+
+    #[test]
+    fn test_is_blocked_page_allows_normal_content() {
+        assert!(!is_blocked_page("<div class=\"g\"><h3>John Doe - 555-1234</h3></div>"));
+        assert!(!is_blocked_page("No results found for that query"));
+    }
+
+    #[test]
+    fn test_create_client_builds_ok() {
+        assert!(create_client_with_timeout(10, false).is_ok());
+        assert!(create_client_with_timeout(5, true).is_ok());
+    }
 }
